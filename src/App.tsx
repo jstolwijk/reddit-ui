@@ -1,6 +1,7 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams } from "react-router-dom";
+import { useLocalStorage } from "./use-local-storage";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
@@ -19,6 +20,8 @@ const App = () => {
   );
 };
 
+const increment = (number: number | undefined) => (number ?? 0) + 1;
+
 function SubReddit() {
   let { subRedditName } = useParams<any>();
 
@@ -26,10 +29,37 @@ function SubReddit() {
   const { data, error } = useSWR(`https://www.reddit.com/r/${subRedditName}.json`, fetcher, {
     refreshInterval: refreshData ? 10000 : undefined,
   });
-  console.log(data);
+
+  const [value, setNewValue] = useLocalStorage("favorites", { [subRedditName]: 1 });
+
+  useEffect(() => {
+    setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
+  }, [subRedditName]);
+
+  const favorites: string[] = useMemo(
+    () =>
+      Object.keys(value)
+        .map((k) => ({ key: k, value: value[k] as number }))
+        .sort((a, b) => (a.value > b.value ? -1 : 1))
+        .map((e) => e.key)
+        .slice(0, 10),
+    []
+  );
   return (
     <div>
       <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+      <div>
+        Your favorite subreddits:
+        <ul>
+          {favorites.map((favorite) => (
+            <li>
+              <Link to={"/r/" + favorite} className="text-blue-600">
+                {favorite}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
       <div>
         {data?.data?.children?.map((post: any) => (
           <>
