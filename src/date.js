@@ -48,11 +48,11 @@ function getFormattedDate(date, prefomattedDate = false, hideYear = false) {
 
   if (hideYear) {
     // 10. January at 10:20
-    return `${month} ${day}${ordinal_suffix_of(day)} at ${hours}:${minutes}`;
+    return `${month} ${ordinal_suffix_of(day)} at ${hours}:${minutes}`;
   }
 
   // 10. January 2017. at 10:20
-  return `${month} ${day}${ordinal_suffix_of(day)} ${year} at ${hours}:${minutes}`;
+  return `${month} ${ordinal_suffix_of(day)} ${year} at ${hours}:${minutes}`;
 }
 
 // --- Main function
