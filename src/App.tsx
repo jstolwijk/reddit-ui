@@ -1,24 +1,20 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
 function App() {
+  const { data, error } = useSWR("https://www.reddit.com/r/GlobalOffensive.json", fetcher);
+  console.log(data);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <div>
+        {data?.data?.children?.map((post: any) => (
+          <div key={post.data.permalink}>
+            <h3>{post.data.title}</h3>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
