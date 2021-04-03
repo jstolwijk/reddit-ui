@@ -30,6 +30,8 @@ function SubReddit() {
     refreshInterval: refreshData ? 10000 : undefined,
   });
 
+  console.log(data);
+
   const [value, setNewValue] = useLocalStorage("favorites", { [subRedditName]: 1 });
 
   useEffect(() => {
@@ -46,26 +48,33 @@ function SubReddit() {
     []
   );
   return (
-    <div>
-      <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
-      <div>
-        Your favorite subreddits:
-        <ul>
-          {favorites.map((favorite) => (
-            <li>
-              <Link to={"/r/" + favorite} className="text-blue-600">
-                {favorite}
-              </Link>
-            </li>
+    <div className="bg-gray-100">
+      <div className="container mx-auto">
+        <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+        <div>
+          Your favorite subreddits:
+          <ul>
+            {favorites.map((favorite) => (
+              <li>
+                <Link to={"/r/" + favorite} className="text-blue-600">
+                  {favorite}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          {data?.data?.children?.map((post: any) => (
+            <>
+              <Post
+                key={post.data.permalink}
+                title={post.data.title}
+                postedBy={post.data.author}
+                media={post.data.media}
+              />
+            </>
           ))}
-        </ul>
-      </div>
-      <div>
-        {data?.data?.children?.map((post: any) => (
-          <>
-            <Post key={post.data.permalink} title={post.data.title} postedBy="jesse" />
-          </>
-        ))}
+        </div>
       </div>
     </div>
   );
@@ -99,13 +108,38 @@ const Toggle: FC<ToggleProps> = ({ id, label, checked, onToggle }) => {
 interface PostProps {
   title: string;
   postedBy: string;
+  media: any;
 }
 
-const Post: FC<PostProps> = ({ title, postedBy }) => {
+const regex = new RegExp("(.*)https://www.youtube.com/embed/([a-zA-Z0-9]+)(.*)");
+
+const Post: FC<PostProps> = ({ title, postedBy, media }) => {
+  const matches = regex.exec(media?.oembed?.html);
+
+  let postType = "";
+  if (matches && matches[2]) {
+    postType = "YouTube video";
+  }
+
   return (
-    <div>
-      <h2>{title}</h2>
-      <p>{postedBy}</p>
+    <div className="p-2 m-4 rounded bg-white shadow-lg divide-y font-extralight cursor-pointer">
+      <div className="p-1">
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <h3>{postType}</h3>
+        {media?.type === "youtube.com" && media?.oembed && matches && (
+          <div>
+            <iframe
+              className="youtube-frame"
+              src={`https://www.youtube.com/embed/${matches[2]}?autoplay=0`}
+              allowFullScreen
+            />
+          </div>
+        )}
+      </div>
+      <div className="p-1 flex justify-between">
+        <div>Posted by {postedBy}</div>
+        <div>12 hours ago</div>
+      </div>
     </div>
   );
 };
