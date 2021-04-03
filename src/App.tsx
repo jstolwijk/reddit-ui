@@ -1,8 +1,8 @@
-import React, { FC, useEffect, useMemo, useState } from "react";
-import useSWR from "swr";
+import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import useSWR, { useSWRInfinite } from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams } from "react-router-dom";
 import { useLocalStorage } from "./use-local-storage";
-
+import { timeAgo } from "./date";
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
 const App = () => {
@@ -22,13 +22,20 @@ const App = () => {
 
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
+const getKey = (pageIndex: number, previousPageData: any, subRedditName: string) => {
+  if (previousPageData && !previousPageData.data) return null;
+  if (pageIndex === 0) {
+    return `https://www.reddit.com/r/${subRedditName}.json`;
+  }
+  return `https://www.reddit.com/r/${subRedditName}.json?after=${previousPageData.data.after}&before=${previousPageData.data.before}&limit=25`;
+};
+
 function SubReddit() {
   let { subRedditName } = useParams<any>();
 
   const [refreshData, setRefreshData] = useState(true);
-  const { data, error } = useSWR(`https://www.reddit.com/r/${subRedditName}.json`, fetcher, {
-    refreshInterval: refreshData ? 10000 : undefined,
-  });
+
+  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName), fetcher);
 
   console.log(data);
 
@@ -37,6 +44,33 @@ function SubReddit() {
   useEffect(() => {
     setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
   }, [subRedditName]);
+
+  const loader = useRef(null);
+
+  const handleObserver = (entities: any) => {
+    const target = entities[0];
+    if (target.isIntersecting) {
+      setSize((page) => page + 1);
+    }
+  };
+
+  useEffect(() => {
+    var options = {
+      root: null,
+      rootMargin: "500px",
+      threshold: 0.1,
+    };
+    // initialize IntersectionObserver
+    // and attaching to Load More div
+    const observer = new IntersectionObserver(handleObserver, options);
+    if (loader.current) {
+      observer.observe(loader.current!);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const favorites: string[] = useMemo(
     () =>
@@ -47,6 +81,7 @@ function SubReddit() {
         .slice(0, 10),
     []
   );
+
   return (
     <div className="bg-gray-100">
       <div className="container mx-auto">
@@ -64,16 +99,22 @@ function SubReddit() {
           </ul>
         </div>
         <div>
-          {data?.data?.children?.map((post: any) => (
-            <>
-              <Post
-                key={post.data.permalink}
-                title={post.data.title}
-                postedBy={post.data.author}
-                media={post.data.media}
-              />
-            </>
-          ))}
+          {data
+            ?.flatMap((d) => d?.data?.children)
+            ?.map((post: any) => (
+              <>
+                <Post
+                  key={post.data.permalink}
+                  title={post.data.title}
+                  postedBy={post.data.author}
+                  media={post.data.media}
+                  createdAt={post.data.created_utc}
+                />
+              </>
+            ))}
+        </div>
+        <div className="p-32" ref={loader}>
+          <h2>Load More</h2>
         </div>
       </div>
     </div>
@@ -82,6 +123,7 @@ function SubReddit() {
 
 interface ToggleProps {
   id: string;
+
   label: string;
   checked: boolean;
   onToggle: (newValue: boolean) => void;
@@ -106,6 +148,7 @@ const Toggle: FC<ToggleProps> = ({ id, label, checked, onToggle }) => {
 };
 
 interface PostProps {
+  createdAt: number;
   title: string;
   postedBy: string;
   media: any;
@@ -113,13 +156,19 @@ interface PostProps {
 
 const regex = new RegExp("(.*)https://www.youtube.com/embed/([a-zA-Z0-9]+)(.*)");
 
-const Post: FC<PostProps> = ({ title, postedBy, media }) => {
+const Post: FC<PostProps> = ({ title, postedBy, media, createdAt }) => {
   const matches = regex.exec(media?.oembed?.html);
 
   let postType = "";
   if (matches && matches[2]) {
     postType = "YouTube video";
   }
+
+  const createdAtFormattedString = useMemo(() => {
+    const d = new Date(0);
+    d.setUTCSeconds(createdAt);
+    return timeAgo(d);
+  }, [createdAt]);
 
   return (
     <div className="p-2 m-4 rounded bg-white shadow-lg divide-y font-extralight cursor-pointer">
@@ -138,7 +187,7 @@ const Post: FC<PostProps> = ({ title, postedBy, media }) => {
       </div>
       <div className="p-1 flex justify-between">
         <div>Posted by {postedBy}</div>
-        <div>12 hours ago</div>
+        <div>{createdAtFormattedString}</div>
       </div>
     </div>
   );
