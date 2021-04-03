@@ -1,11 +1,29 @@
 import React, { FC, useState } from "react";
 import useSWR from "swr";
+import { BrowserRouter as Router, Switch, Route, Link, useParams } from "react-router-dom";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
-function App() {
-  const [refreshData, setRefreshData] = useState(false);
-  const { data, error } = useSWR("https://www.reddit.com/r/GlobalOffensive.json", fetcher, {
+const App = () => {
+  return (
+    <Router>
+      <Switch>
+        <Route path="/r/:subRedditName">
+          <SubReddit />
+        </Route>
+        <Route>
+          <div>Default</div>
+        </Route>
+      </Switch>
+    </Router>
+  );
+};
+
+function SubReddit() {
+  let { subRedditName } = useParams<any>();
+
+  const [refreshData, setRefreshData] = useState(true);
+  const { data, error } = useSWR(`https://www.reddit.com/r/${subRedditName}.json`, fetcher, {
     refreshInterval: refreshData ? 10000 : undefined,
   });
   console.log(data);
