@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { useSWRInfinite } from "swr";
-import { BrowserRouter as Router, Switch, Route, Link, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect } from "react-router-dom";
 import { useLocalStorage } from "./use-local-storage";
 import { timeAgo } from "./date";
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
@@ -9,25 +9,52 @@ const App = () => {
   return (
     <Router>
       <Switch>
+        <Route path="/r/:subRedditName/comments/:commentsId">
+          <Comments />
+        </Route>
         <Route path="/r/:subRedditName">
           <SubReddit />
         </Route>
+        <Route path="/r/">
+          <SubReddit />
+        </Route>
         <Route>
-          <div>Default</div>
+          <Redirect to="/r/" />
         </Route>
       </Switch>
     </Router>
   );
 };
 
+const Comments = () => {
+  let { subRedditName, commentsId } = useParams<any>();
+
+  const { data } = useSWR(`https://www.reddit.com/r/${subRedditName}/comments/${commentsId}.json`, fetcher);
+
+  if (!data) {
+    return <div>loading</div>;
+  }
+
+  const postData = data[0].data.children[0].data;
+  return (
+    <div>
+      <h1>{postData.title}</h1>
+      {postData.post_hint === "image" && <img src={postData.url} />}
+      {}
+    </div>
+  );
+};
+
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
-const getKey = (pageIndex: number, previousPageData: any, subRedditName: string) => {
+const getKey = (pageIndex: number, previousPageData: any, subRedditName: string | undefined) => {
   if (previousPageData && !previousPageData.data) return null;
+
+  const base = subRedditName ? `https://www.reddit.com/r/${subRedditName}.json` : `https://www.reddit.com/.json`;
   if (pageIndex === 0) {
-    return `https://www.reddit.com/r/${subRedditName}.json`;
+    return base;
   }
-  return `https://www.reddit.com/r/${subRedditName}.json?after=${previousPageData.data.after}&before=${previousPageData.data.before}&limit=25`;
+  return `${base}?after=${previousPageData.data.after}&before=${previousPageData.data.before}&limit=25`;
 };
 
 function SubReddit() {
@@ -35,13 +62,18 @@ function SubReddit() {
 
   const [refreshData, setRefreshData] = useState(true);
 
+  const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
+
   const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName), fetcher);
 
   console.log(data);
 
-  const [value, setNewValue] = useLocalStorage("favorites", { [subRedditName]: 1 });
+  const [value, setNewValue] = useLocalStorage("favorites", {});
 
   useEffect(() => {
+    if (!subRedditName || subRedditName === "comments") {
+      return;
+    }
     setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
   }, [subRedditName]);
 
@@ -86,6 +118,9 @@ function SubReddit() {
     <div className="bg-gray-100">
       <div className="container mx-auto">
         <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+        <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
+        <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
+
         <div>
           Your favorite subreddits:
           <ul>
@@ -104,16 +139,23 @@ function SubReddit() {
             ?.map((post: any) => (
               <>
                 <Post
+                  id={post.data.id}
+                  expandMedia={expandMedia}
+                  stickied={post.data.stickied}
                   key={post.data.permalink}
                   title={post.data.title}
                   postedBy={post.data.author}
                   media={post.data.media}
                   createdAt={post.data.created_utc}
+                  mediaEmbed={post.data.media_embed}
+                  type={post.data.post_hint}
+                  url={post.data.url}
+                  subReddit={post.data.subreddit}
                 />
               </>
             ))}
         </div>
-        <div className="p-32" ref={loader}>
+        <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
           <h2>Load More</h2>
         </div>
       </div>
@@ -147,16 +189,45 @@ const Toggle: FC<ToggleProps> = ({ id, label, checked, onToggle }) => {
   );
 };
 
+// TODO:
+// * support cross post
+// * Diaply links
+// * Render open Graph thumb
 interface PostProps {
+  id: string;
   createdAt: number;
+  stickied: boolean;
   title: string;
   postedBy: string;
   media: any;
+  mediaEmbed: any;
+  expandMedia: boolean;
+  type?: string;
+  url?: string;
+  subReddit: string;
 }
 
 const regex = new RegExp("(.*)https://www.youtube.com/embed/([a-zA-Z0-9]+)(.*)");
 
-const Post: FC<PostProps> = ({ title, postedBy, media, createdAt }) => {
+const htmlDecode = (input: string): string | null => {
+  const e = document.createElement("div");
+  e.innerHTML = input;
+  return e.childNodes.length === 0 ? "" : e.childNodes[0].nodeValue;
+};
+
+const Post: FC<PostProps> = ({
+  id,
+  title,
+  postedBy,
+  media,
+  mediaEmbed,
+  createdAt,
+  stickied,
+  expandMedia,
+  type,
+  url,
+  subReddit,
+}) => {
   const matches = regex.exec(media?.oembed?.html);
 
   let postType = "";
@@ -170,26 +241,28 @@ const Post: FC<PostProps> = ({ title, postedBy, media, createdAt }) => {
     return timeAgo(d);
   }, [createdAt]);
 
+  const bgColor = stickied ? "bg-yellow-100" : "bg-white";
+
   return (
-    <div className="p-2 m-4 rounded bg-white shadow-lg divide-y font-extralight cursor-pointer">
-      <div className="p-1">
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <h3>{postType}</h3>
-        {media?.type === "youtube.com" && media?.oembed && matches && (
+    <Link to={"/r/" + subReddit + "/comments/" + id}>
+      <div className={`p-2 m-4 rounded ${bgColor} shadow-lg divide-y font-extralight cursor-pointer`}>
+        <div className="p-1">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <h3>{postType}</h3>
+          {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
+          {expandMedia && mediaEmbed.content && (
+            <div dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
+          )}
+          {expandMedia && type === "image" && <img src={url} />}
+        </div>
+        <div className="p-1 flex justify-between">
           <div>
-            <iframe
-              className="youtube-frame"
-              src={`https://www.youtube.com/embed/${matches[2]}?autoplay=0`}
-              allowFullScreen
-            />
+            Posted by {postedBy} in <Link to={"/r/" + subReddit}>/r/{subReddit}</Link>
           </div>
-        )}
+          <div>{createdAtFormattedString}</div>
+        </div>
       </div>
-      <div className="p-1 flex justify-between">
-        <div>Posted by {postedBy}</div>
-        <div>{createdAtFormattedString}</div>
-      </div>
-    </div>
+    </Link>
   );
 };
 
