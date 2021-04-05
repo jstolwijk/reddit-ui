@@ -355,7 +355,7 @@ const Post: FC<PostProps> = ({
   const bgColor = stickied ? "bg-yellow-100" : "bg-white";
 
   return (
-    <div className={`p-2 m-4 rounded ${bgColor} shadow-lg divide-y font-extralight`}>
+    <div className={`p-2 lg:mx-4 my-2 lg:rounded-lg ${bgColor} shadow-lg divide-y font-extralight`}>
       <div className="p-1">
         <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-xl font-semibold">{title}</h2>
