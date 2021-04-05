@@ -214,8 +214,6 @@ interface PostProps {
   subReddit: string;
 }
 
-const regex = new RegExp("(.*)https://www.youtube.com/embed/([a-zA-Z0-9]+)(.*)");
-
 const htmlDecode = (input: string): string | null => {
   const e = document.createElement("div");
   e.innerHTML = input;
@@ -235,13 +233,6 @@ const Post: FC<PostProps> = ({
   url,
   subReddit,
 }) => {
-  const matches = regex.exec(media?.oembed?.html);
-
-  let postType = "";
-  if (matches && matches[2]) {
-    postType = "YouTube video";
-  }
-
   const createdAtFormattedString = useMemo(() => {
     const d = new Date(0);
     d.setUTCSeconds(createdAt);
@@ -253,11 +244,9 @@ const Post: FC<PostProps> = ({
   return (
     <div className={`p-2 m-4 rounded ${bgColor} shadow-lg divide-y font-extralight`}>
       <div className="p-1">
-        <Link to={"/r/" + subReddit + "/comments/" + id}>
+        <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-xl font-semibold">{title}</h2>
-        </Link>
-
-        <h3>{postType}</h3>
+        </TitleLink>
         {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
 
         {expandMedia && mediaEmbed.content && (
@@ -277,6 +266,23 @@ const Post: FC<PostProps> = ({
       </div>
     </div>
   );
+};
+
+interface TitleLinkProps {
+  internalUrl: string;
+  externalUrl?: string;
+}
+
+const TitleLink: FC<TitleLinkProps> = ({ externalUrl, internalUrl, children }) => {
+  if (externalUrl) {
+    return (
+      <a href={externalUrl} target="_blank">
+        {children}
+      </a>
+    );
+  }
+
+  return <Link to={internalUrl}>{children}</Link>;
 };
 
 export default App;
