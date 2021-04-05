@@ -177,7 +177,10 @@ function SubReddit() {
       return;
     }
     setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
-  }, [subRedditName, setNewValue, value]);
+
+    // eslint tells us to add setNewValue and value to the depenendency list, if we do this the component will get stuck in a rerender loop since value is a complex object
+    // eslint-disable-next-line
+  }, [subRedditName]);
 
   const loader = useRef(null);
 
