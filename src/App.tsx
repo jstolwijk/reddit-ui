@@ -47,16 +47,113 @@ const Comments = () => {
 
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
-const getKey = (pageIndex: number, previousPageData: any, subRedditName: string | undefined) => {
+enum ViewType {
+  TOP = "TOP",
+  NEW = "NEW",
+  HOT = "HOT",
+}
+
+enum TimeRange {
+  NOW = "hour",
+  TODAY = "day",
+  THIS_WEEK = "week",
+  THIS_MONTH = "month",
+  THIS_YEAR = "year",
+  ALL_TIME = "all",
+}
+
+const getKey = (
+  pageIndex: number,
+  previousPageData: any,
+  subRedditName: string | undefined,
+  viewType: ViewType,
+  timeRange: TimeRange
+) => {
   if (previousPageData && !previousPageData.data) return null;
 
-  const base = subRedditName ? `https://www.reddit.com/r/${subRedditName}.json` : `https://www.reddit.com/.json`;
+  const base = subRedditName
+    ? `https://www.reddit.com/r/${subRedditName}/${viewType.toLowerCase()}/.json`
+    : `https://www.reddit.com/${viewType.toLowerCase()}/.json`;
+
+  const timePart = viewType === ViewType.TOP ? `t=${timeRange.toLowerCase()}` : "";
+
   if (pageIndex === 0) {
-    return base;
+    return base + (timePart ? "?" + timePart : "");
   }
-  return `${base}?after=${previousPageData.data.after}&before=${previousPageData.data.before}&limit=25`;
+
+  return `${base}?after=${previousPageData.data.after}&before=${previousPageData.data.before}&limit=25${
+    timePart ? "&" + timePart : ""
+  }`;
 };
 
+interface ViewTypeSelectorProps {
+  viewType: ViewType;
+  onViewTypeChange: (viewType: ViewType) => void;
+}
+
+const ViewTypeSelector: FC<ViewTypeSelectorProps> = ({ viewType, onViewTypeChange }) => {
+  return (
+    <div className="relative inline-flex">
+      <svg
+        className="w-2 h-2 absolute top-0 right-0 m-4 pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 412 232"
+      >
+        <path
+          d="M206 171.144L42.678 7.822c-9.763-9.763-25.592-9.763-35.355 0-9.763 9.764-9.763 25.592 0 35.355l181 181c4.88 4.882 11.279 7.323 17.677 7.323s12.796-2.441 17.678-7.322l181-181c9.763-9.764 9.763-25.592 0-35.355-9.763-9.763-25.592-9.763-35.355 0L206 171.144z"
+          fill="#648299"
+          fill-rule="nonzero"
+        />
+      </svg>
+
+      <select
+        value={viewType}
+        onChange={(e) => onViewTypeChange(e.target.value as ViewType)}
+        className="border border-gray-300 rounded-full text-gray-600 h-10 pl-5 pr-10 bg-white hover:border-gray-400 focus:outline-none appearance-none"
+      >
+        <option value={ViewType.HOT}>Hot</option>
+        <option value={ViewType.NEW}>New</option>
+        <option value={ViewType.TOP}>Top</option>
+      </select>
+    </div>
+  );
+};
+
+interface TimeRangeSelectorProps {
+  timeRange: TimeRange;
+  onTimeRangeChanged: (timeRange: TimeRange) => void;
+}
+
+const TimeRangeSelector: FC<TimeRangeSelectorProps> = ({ timeRange, onTimeRangeChanged }) => {
+  return (
+    <div className="relative inline-flex">
+      <svg
+        className="w-2 h-2 absolute top-0 right-0 m-4 pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 412 232"
+      >
+        <path
+          d="M206 171.144L42.678 7.822c-9.763-9.763-25.592-9.763-35.355 0-9.763 9.764-9.763 25.592 0 35.355l181 181c4.88 4.882 11.279 7.323 17.677 7.323s12.796-2.441 17.678-7.322l181-181c9.763-9.764 9.763-25.592 0-35.355-9.763-9.763-25.592-9.763-35.355 0L206 171.144z"
+          fill="#648299"
+          fill-rule="nonzero"
+        />
+      </svg>
+
+      <select
+        value={timeRange}
+        onChange={(e) => onTimeRangeChanged(e.target.value as TimeRange)}
+        className="border border-gray-300 rounded-full text-gray-600 h-10 pl-5 pr-10 bg-white hover:border-gray-400 focus:outline-none appearance-none"
+      >
+        <option value={TimeRange.NOW}>Now</option>
+        <option value={TimeRange.TODAY}>Today</option>
+        <option value={TimeRange.THIS_WEEK}>This week</option>
+        <option value={TimeRange.THIS_MONTH}>This month</option>
+        <option value={TimeRange.THIS_YEAR}>This year</option>
+        <option value={TimeRange.ALL_TIME}>All time</option>
+      </select>
+    </div>
+  );
+};
 function SubReddit() {
   let { subRedditName } = useParams<any>();
 
@@ -64,13 +161,14 @@ function SubReddit() {
 
   const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
 
-  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName), fetcher, {
+  const [viewType, setViewType] = useState(ViewType.HOT);
+  const [timeRange, setTimeRange] = useState(TimeRange.TODAY);
+
+  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange), fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateAll: false,
   });
-
-  console.log(data);
 
   const [value, setNewValue] = useLocalStorage("favorites", {});
 
@@ -121,24 +219,31 @@ function SubReddit() {
     [value]
   );
 
+  console.log("Time range", timeRange);
+
   return (
     <div className="bg-gray-100">
       <div className="container mx-auto">
-        <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
-        <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
-        <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
+        <div className="p-4">
+          <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+          <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
+          <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
 
-        <div>
-          Your favorite subreddits:
-          <ul>
-            {favorites.map((favorite) => (
-              <li>
-                <Link to={"/r/" + favorite} className="text-blue-600">
-                  {favorite}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div>
+            Your favorite subreddits:
+            <ul>
+              {favorites.map((favorite) => (
+                <li>
+                  <Link to={"/r/" + favorite} className="text-blue-600">
+                    {favorite}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <br />
+          <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+          {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
         </div>
         <div>
           {data
