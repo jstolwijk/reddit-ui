@@ -195,20 +195,25 @@ function SubReddit() {
   );
 
   useEffect(() => {
-    var options = {
-      root: null,
-      rootMargin: "500px",
-      threshold: 0.1,
-    };
-    // initialize IntersectionObserver
-    // and attaching to Load More div
-    const observer = new IntersectionObserver(handleObserver, options);
-    if (loader.current) {
-      observer.observe(loader.current!);
-    }
+    let observer: IntersectionObserver;
+
+    // Wait a bit before adding the infinite scroll detection
+    const timeout = setTimeout(() => {
+      const options = {
+        root: null,
+        rootMargin: "500px",
+        threshold: 0.1,
+      };
+
+      observer = new IntersectionObserver(handleObserver, options);
+      if (loader.current) {
+        observer.observe(loader.current!);
+      }
+    }, 1500);
 
     return () => {
-      observer.disconnect();
+      clearTimeout(timeout);
+      observer?.disconnect();
     };
   }, [handleObserver]);
 
