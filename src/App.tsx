@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { useSWRInfinite } from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect } from "react-router-dom";
 import { useLocalStorage } from "./use-local-storage";
@@ -39,7 +39,7 @@ const Comments = () => {
   return (
     <div>
       <h1>{postData.title}</h1>
-      {postData.post_hint === "image" && <img src={postData.url} />}
+      {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
       <a href={postData.url}>{postData.url}</a>
     </div>
   );
@@ -79,16 +79,19 @@ function SubReddit() {
       return;
     }
     setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
-  }, [subRedditName]);
+  }, [subRedditName, setNewValue, value]);
 
   const loader = useRef(null);
 
-  const handleObserver = (entities: any) => {
-    const target = entities[0];
-    if (target.isIntersecting) {
-      setSize((page) => page + 1);
-    }
-  };
+  const handleObserver = useCallback(
+    (entities: any) => {
+      const target = entities[0];
+      if (target.isIntersecting) {
+        setSize((page) => page + 1);
+      }
+    },
+    [setSize]
+  );
 
   useEffect(() => {
     var options = {
@@ -106,7 +109,7 @@ function SubReddit() {
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [handleObserver]);
 
   const favorites: string[] = useMemo(
     () =>
@@ -115,7 +118,7 @@ function SubReddit() {
         .sort((a, b) => (a.value > b.value ? -1 : 1))
         .map((e) => e.key)
         .slice(0, 10),
-    []
+    [value]
   );
 
   return (
@@ -262,7 +265,7 @@ const Post: FC<PostProps> = ({
         )}
         {expandMedia && type === "image" && (
           <div className="p-2">
-            <img className="object-scale-down h-96 w-full" src={url} />
+            <img className="object-scale-down h-96 w-full" src={url} alt="Media" />
           </div>
         )}
       </div>

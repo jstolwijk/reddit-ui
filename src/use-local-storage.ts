@@ -40,7 +40,7 @@ export const useLocalStorage = (key: string, initialValue: any = null) => {
     return () => {
       delete lsBus[componentId];
     };
-  }, []);
+  }, [componentId, key]);
 
   return [
     value,
