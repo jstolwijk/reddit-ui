@@ -250,8 +250,10 @@ function SubReddit() {
             </ul>
           </div>
           <br />
-          <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-          {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
+          <div className="flex space-x-4">
+            <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+            {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
+          </div>
         </div>
         <div>
           {data
