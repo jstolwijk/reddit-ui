@@ -276,7 +276,7 @@ interface TitleLinkProps {
 const TitleLink: FC<TitleLinkProps> = ({ externalUrl, internalUrl, children }) => {
   if (externalUrl) {
     return (
-      <a href={externalUrl} target="_blank">
+      <a href={externalUrl} target="_blank" rel="noreferrer">
         {children}
       </a>
     );
