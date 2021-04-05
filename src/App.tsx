@@ -40,7 +40,7 @@ const Comments = () => {
     <div>
       <h1>{postData.title}</h1>
       {postData.post_hint === "image" && <img src={postData.url} />}
-      {}
+      <a href={postData.url}>{postData.url}</a>
     </div>
   );
 };
@@ -64,7 +64,11 @@ function SubReddit() {
 
   const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
 
-  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName), fetcher);
+  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName), fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateAll: false,
+  });
 
   console.log(data);
 
@@ -244,25 +248,31 @@ const Post: FC<PostProps> = ({
   const bgColor = stickied ? "bg-yellow-100" : "bg-white";
 
   return (
-    <Link to={"/r/" + subReddit + "/comments/" + id}>
-      <div className={`p-2 m-4 rounded ${bgColor} shadow-lg divide-y font-extralight cursor-pointer`}>
-        <div className="p-1">
+    <div className={`p-2 m-4 rounded ${bgColor} shadow-lg divide-y font-extralight`}>
+      <div className="p-1">
+        <Link to={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-xl font-semibold">{title}</h2>
-          <h3>{postType}</h3>
-          {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
-          {expandMedia && mediaEmbed.content && (
-            <div dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
-          )}
-          {expandMedia && type === "image" && <img src={url} />}
-        </div>
-        <div className="p-1 flex justify-between">
-          <div>
-            Posted by {postedBy} in <Link to={"/r/" + subReddit}>/r/{subReddit}</Link>
+        </Link>
+
+        <h3>{postType}</h3>
+        {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
+
+        {expandMedia && mediaEmbed.content && (
+          <div dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
+        )}
+        {expandMedia && type === "image" && (
+          <div className="p-2">
+            <img className="object-scale-down h-96 w-full" src={url} />
           </div>
-          <div>{createdAtFormattedString}</div>
-        </div>
+        )}
       </div>
-    </Link>
+      <div className="p-1 flex justify-between">
+        <div>
+          Posted by {postedBy} in <Link to={"/r/" + subReddit}>/r/{subReddit}</Link>
+        </div>
+        <div>{createdAtFormattedString}</div>
+      </div>
+    </div>
   );
 };
 
