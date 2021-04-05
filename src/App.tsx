@@ -367,7 +367,7 @@ const Post: FC<PostProps> = ({
         )}
         {expandMedia && type === "image" && (
           <div className="p-2">
-            <img className="object-scale-down h-96 w-full" src={url} alt="Media" />
+            <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
           </div>
         )}
       </div>
