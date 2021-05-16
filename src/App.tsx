@@ -223,7 +223,7 @@ function SubReddit() {
         .map((k) => ({ key: k, value: value[k] as number }))
         .sort((a, b) => (a.value > b.value ? -1 : 1))
         .map((e) => e.key)
-        .slice(0, 10),
+        .slice(0, 20),
     [value]
   );
 
@@ -231,54 +231,64 @@ function SubReddit() {
 
   return (
     <div className="bg-gray-100">
-      <div className="container mx-auto">
-        <div className="p-4">
-          <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
-          <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
-          <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
-
-          <div>
-            Your favorite subreddits:
-            <ul>
-              {favorites.map((favorite) => (
-                <li>
-                  <Link to={"/r/" + favorite} className="text-blue-600">
-                    {favorite}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <br />
-          <div className="flex space-x-4">
-            <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-            {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
-          </div>
-        </div>
+      <div className="container mx-auto lg:grid lg:grid-flow-col lg:grid-cols-6">
         <div>
-          {data
-            ?.flatMap((d) => d?.data?.children)
-            ?.map((post: any) => (
-              <>
-                <Post
-                  id={post.data.id}
-                  expandMedia={expandMedia}
-                  stickied={post.data.stickied}
-                  key={post.data.permalink}
-                  title={post.data.title}
-                  postedBy={post.data.author}
-                  media={post.data.media}
-                  createdAt={post.data.created_utc}
-                  mediaEmbed={post.data.media_embed}
-                  type={post.data.post_hint}
-                  url={post.data.url}
-                  subReddit={post.data.subreddit}
-                />
-              </>
-            ))}
+          <div className="sticky top-0 py-2">
+            <div className="p-4 bg-white shadow-lg rounded-lg">
+              <Link to="/">Frontpage</Link>
+              <div>
+                <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+                <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
+                <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
+              </div>
+            </div>{" "}
+            <div className="my-2 p-4 bg-white shadow-lg rounded-lg">
+              Your favorite subreddits:
+              <ul>
+                {favorites.map((favorite) => (
+                  <li>
+                    <Link to={"/r/" + favorite} className="text-blue-600">
+                      {favorite}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="my-2 p-4 bg-white shadow-lg rounded-lg">
+              <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+              {viewType === ViewType.TOP && (
+                <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
+              )}
+            </div>
+          </div>
         </div>
-        <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
-          <h2>Load More</h2>
+        <div className="col-span-5">
+          <div>
+            {!data && <p>Pending</p>}
+            {data
+              ?.flatMap((d) => d?.data?.children)
+              ?.map((post: any) => (
+                <>
+                  <Post
+                    id={post.data.id}
+                    expandMedia={expandMedia}
+                    stickied={post.data.stickied}
+                    key={post.data.permalink}
+                    title={post.data.title}
+                    postedBy={post.data.author}
+                    media={post.data.media}
+                    createdAt={post.data.created_utc}
+                    mediaEmbed={post.data.media_embed}
+                    type={post.data.post_hint}
+                    url={post.data.url}
+                    subReddit={post.data.subreddit}
+                  />
+                </>
+              ))}
+          </div>
+          <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
+            <h2>Load More</h2>
+          </div>
         </div>
       </div>
     </div>
