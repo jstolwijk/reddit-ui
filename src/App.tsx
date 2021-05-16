@@ -3,6 +3,7 @@ import useSWR, { useSWRInfinite } from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect } from "react-router-dom";
 import { useLocalStorage } from "./use-local-storage";
 import { timeAgo } from "./date";
+import { Block, ScreenSize, Stack, useScreenSize } from "./components/Components";
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
 const App = () => {
@@ -227,43 +228,54 @@ function SubReddit() {
     [value]
   );
 
-  console.log("Time range", timeRange);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
+  console.log("Time range", timeRange);
+  const screenSize = useScreenSize();
+  console.log(screenSize);
   return (
     <div className="bg-gray-100">
-      <div className="container mx-auto lg:grid lg:grid-flow-col lg:grid-cols-6">
-        <div>
-          <div className="sticky top-0 py-2">
-            <div className="p-4 bg-white shadow-lg rounded-lg">
-              <Link to="/">Frontpage</Link>
-              <div>
-                <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
-                <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
-                <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
-              </div>
-            </div>{" "}
-            <div className="my-2 p-4 bg-white shadow-lg rounded-lg">
-              Your favorite subreddits:
-              <ul>
-                {favorites.map((favorite) => (
-                  <li>
-                    <Link to={"/r/" + favorite} className="text-blue-600">
-                      {favorite}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="my-2 p-4 bg-white shadow-lg rounded-lg">
-              <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-              {viewType === ViewType.TOP && (
-                <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
-              )}
-            </div>
+      <div className="container mx-auto lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
+        {screenSize > ScreenSize.md && (
+          <div className="col-span-2">
+            <Settings
+              refreshData={refreshData}
+              expandMedia={expandMedia}
+              favorites={favorites}
+              setExpandMedia={setExpandMedia}
+              setRefreshData={setRefreshData}
+              viewType={viewType}
+              setViewType={setViewType}
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+            />
           </div>
-        </div>
-        <div className="col-span-5">
+        )}
+        {screenSize <= ScreenSize.md && (
           <div>
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              Settings
+            </button>
+            {settingsOpen && (
+              <Settings
+                refreshData={refreshData}
+                expandMedia={expandMedia}
+                favorites={favorites}
+                setExpandMedia={setExpandMedia}
+                setRefreshData={setRefreshData}
+                viewType={viewType}
+                setViewType={setViewType}
+                timeRange={timeRange}
+                setTimeRange={setTimeRange}
+              />
+            )}
+          </div>
+        )}
+        <div className="col-span-10">
+          <Stack>
             {!data && <p>Pending</p>}
             {data
               ?.flatMap((d) => d?.data?.children)
@@ -285,7 +297,7 @@ function SubReddit() {
                   />
                 </>
               ))}
-          </div>
+          </Stack>
           <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
             <h2>Load More</h2>
           </div>
@@ -294,6 +306,61 @@ function SubReddit() {
     </div>
   );
 }
+
+interface SettingsProps {
+  refreshData: boolean;
+  setRefreshData: (bool: boolean) => void;
+  expandMedia: boolean;
+  setExpandMedia: (bool: boolean) => void;
+  favorites: any[];
+  viewType: ViewType;
+  setViewType: (newValue: ViewType) => void;
+  timeRange: TimeRange;
+  setTimeRange: (newValue: TimeRange) => void;
+}
+
+const Settings: FC<SettingsProps> = ({
+  refreshData,
+  setRefreshData,
+  expandMedia,
+  setExpandMedia,
+  favorites,
+  viewType,
+  setViewType,
+  timeRange,
+  setTimeRange,
+}) => {
+  return (
+    <div className="sticky top-0">
+      <Stack>
+        <Block>
+          <Link to="/">Frontpage</Link>
+          <div>
+            <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
+            <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
+            <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
+          </div>
+        </Block>
+        <Block>
+          Your favorite subreddits:
+          <ul>
+            {favorites.map((favorite) => (
+              <li>
+                <Link to={"/r/" + favorite} className="text-blue-600">
+                  {favorite}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Block>
+        <Block>
+          <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+          {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
+        </Block>
+      </Stack>
+    </div>
+  );
+};
 
 interface ToggleProps {
   id: string;
@@ -364,10 +431,8 @@ const Post: FC<PostProps> = ({
     return timeAgo(d);
   }, [createdAt]);
 
-  const bgColor = stickied ? "bg-yellow-100" : "bg-white";
-
   return (
-    <div className={`p-2 lg:mx-4 my-1 sm:my-2 sm:rounded-lg ${bgColor} shadow-lg divide-y font-extralight`}>
+    <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>
       <div className="p-1 overflow-hidden">
         <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-xl font-semibold">{title}</h2>
@@ -389,7 +454,7 @@ const Post: FC<PostProps> = ({
         </div>
         <div>{createdAtFormattedString}</div>
       </div>
-    </div>
+    </Block>
   );
 };
 
