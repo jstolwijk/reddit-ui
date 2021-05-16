@@ -228,82 +228,71 @@ function SubReddit() {
     [value]
   );
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  console.log("Time range", timeRange);
   const screenSize = useScreenSize();
-  console.log(screenSize);
+
   return (
-    <div className="bg-gray-100">
-      <div className="container mx-auto lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
-        {screenSize > ScreenSize.md && (
-          <div className="col-span-2">
-            <Settings
-              refreshData={refreshData}
-              expandMedia={expandMedia}
-              favorites={favorites}
-              setExpandMedia={setExpandMedia}
-              setRefreshData={setRefreshData}
-              viewType={viewType}
-              setViewType={setViewType}
-              timeRange={timeRange}
-              setTimeRange={setTimeRange}
-            />
-          </div>
-        )}
-        {screenSize <= ScreenSize.md && (
-          <div>
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={() => setSettingsOpen(!settingsOpen)}
-            >
-              Settings
-            </button>
-            {settingsOpen && (
-              <Settings
-                refreshData={refreshData}
-                expandMedia={expandMedia}
-                favorites={favorites}
-                setExpandMedia={setExpandMedia}
-                setRefreshData={setRefreshData}
-                viewType={viewType}
-                setViewType={setViewType}
-                timeRange={timeRange}
-                setTimeRange={setTimeRange}
-              />
+    <>
+      <div className="bg-gray-100 md:px-2">
+        <div className="container mx-auto">
+          <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
+            <div className="col-span-10">
+              <Stack>
+                <Block>
+                  <div className="px-2">
+                    <h1 className="font-bold text-2xl">{subRedditName || "Front page"}</h1>
+                    <div className="py-4 flex ">
+                      <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+                      {viewType === ViewType.TOP && (
+                        <div className="pl-2">
+                          <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Block>
+              </Stack>
+              <Stack>
+                {!data && <p>Pending</p>}
+                {data
+                  ?.flatMap((d) => d?.data?.children)
+                  ?.map((post: any) => (
+                    <>
+                      <Post
+                        id={post.data.id}
+                        expandMedia={expandMedia}
+                        stickied={post.data.stickied}
+                        key={post.data.permalink}
+                        title={post.data.title}
+                        postedBy={post.data.author}
+                        media={post.data.media}
+                        createdAt={post.data.created_utc}
+                        mediaEmbed={post.data.media_embed}
+                        type={post.data.post_hint}
+                        url={post.data.url}
+                        subReddit={post.data.subreddit}
+                      />
+                    </>
+                  ))}
+              </Stack>
+              <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
+                <h2>Load More</h2>
+              </div>
+            </div>
+            {screenSize > ScreenSize.md && (
+              <div className="col-span-2">
+                <Settings
+                  refreshData={refreshData}
+                  expandMedia={expandMedia}
+                  favorites={favorites}
+                  setExpandMedia={setExpandMedia}
+                  setRefreshData={setRefreshData}
+                />
+              </div>
             )}
-          </div>
-        )}
-        <div className="col-span-10">
-          <Stack>
-            {!data && <p>Pending</p>}
-            {data
-              ?.flatMap((d) => d?.data?.children)
-              ?.map((post: any) => (
-                <>
-                  <Post
-                    id={post.data.id}
-                    expandMedia={expandMedia}
-                    stickied={post.data.stickied}
-                    key={post.data.permalink}
-                    title={post.data.title}
-                    postedBy={post.data.author}
-                    media={post.data.media}
-                    createdAt={post.data.created_utc}
-                    mediaEmbed={post.data.media_embed}
-                    type={post.data.post_hint}
-                    url={post.data.url}
-                    subReddit={post.data.subreddit}
-                  />
-                </>
-              ))}
-          </Stack>
-          <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
-            <h2>Load More</h2>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -313,29 +302,15 @@ interface SettingsProps {
   expandMedia: boolean;
   setExpandMedia: (bool: boolean) => void;
   favorites: any[];
-  viewType: ViewType;
-  setViewType: (newValue: ViewType) => void;
-  timeRange: TimeRange;
-  setTimeRange: (newValue: TimeRange) => void;
 }
 
-const Settings: FC<SettingsProps> = ({
-  refreshData,
-  setRefreshData,
-  expandMedia,
-  setExpandMedia,
-  favorites,
-  viewType,
-  setViewType,
-  timeRange,
-  setTimeRange,
-}) => {
+const Settings: FC<SettingsProps> = ({ refreshData, setRefreshData, expandMedia, setExpandMedia, favorites }) => {
   return (
     <div className="sticky top-0">
       <Stack>
         <Block>
           <Link to="/">Frontpage</Link>
-          <div>
+          <div className="flex flex-col">
             <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
             <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
             <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
@@ -352,10 +327,6 @@ const Settings: FC<SettingsProps> = ({
               </li>
             ))}
           </ul>
-        </Block>
-        <Block>
-          <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-          {viewType === ViewType.TOP && <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />}
         </Block>
       </Stack>
     </div>
