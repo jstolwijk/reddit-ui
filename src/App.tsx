@@ -358,7 +358,7 @@ const Post: FC<PostProps> = ({
 
   return (
     <div className={`p-2 lg:mx-4 my-2 lg:rounded-lg ${bgColor} shadow-lg divide-y font-extralight`}>
-      <div className="p-1">
+      <div className="p-1 overflow-hidden">
         <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-xl font-semibold">{title}</h2>
         </TitleLink>
