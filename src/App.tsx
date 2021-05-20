@@ -37,11 +37,35 @@ const Comments = () => {
   }
 
   const postData = data[0].data.children[0].data;
+  const comments = data[1].data.children.map((c: any) => c.data);
+  console.log(comments);
   return (
     <div>
       <h1>{postData.title}</h1>
       {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
       <a href={postData.url}>{postData.url}</a>
+
+      <div>
+        {comments.map((comment: any) => (
+          <Comment comment={comment} depth={1} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Comment: FC<any> = ({ comment, depth }) => {
+  return (
+    <div className="p-2">
+      <div>
+        {"*".repeat(depth)} {comment.body} - <p>{comment.author}</p>
+      </div>
+      <div>
+        {comment.replies &&
+          comment.replies.data.children
+            .filter((child: any) => child.kind === "t1") // TODO handle "more" type
+            .map((child: any) => <Comment comment={child.data} depth={depth + 1} />)}
+      </div>
     </div>
   );
 };
@@ -422,6 +446,9 @@ const Post: FC<PostProps> = ({
       <div className="p-1 flex justify-between">
         <div>
           Posted by {postedBy} in <Link to={"/r/" + subReddit}>/r/{subReddit}</Link>
+        </div>
+        <div>
+          <Link to={`/r/${subReddit}/comments/${id}`}>Comments</Link>
         </div>
         <div>{createdAtFormattedString}</div>
       </div>
