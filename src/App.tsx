@@ -1,6 +1,6 @@
-import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR, { useSWRInfinite } from "swr";
-import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect, useHistory } from "react-router-dom";
 import { useLocalStorage } from "./use-local-storage";
 import { timeAgo } from "./date";
 import { Block, ScreenSize, Stack, useScreenSize } from "./components/Components";
@@ -179,6 +179,37 @@ const TimeRangeSelector: FC<TimeRangeSelectorProps> = ({ timeRange, onTimeRangeC
     </div>
   );
 };
+
+function useQueryParam<T>(name: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] {
+  const history = useHistory();
+
+  const params = new URLSearchParams(history.location.search);
+  const currentUrlValue = params.has(name) && (params.get(name) as any);
+
+  const [query, setQuery] = useState<typeof defaultValue>(currentUrlValue || defaultValue);
+
+  useEffect(() => {
+    const params = new URLSearchParams(history.location.search);
+    const currentUrlValue = (params.has(name) && (params.get(name) as any)) || defaultValue;
+
+    if (query && currentUrlValue !== query) {
+      params.set(name, String(query));
+      history.push({ search: params.toString() });
+    }
+  }, [query]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(history.location.search);
+    const currentUrlValue = (params.has(name) && (params.get(name) as any)) || defaultValue;
+
+    if (currentUrlValue !== query) {
+      setQuery(currentUrlValue);
+    }
+  }, [history.location.search, history]);
+
+  return [query, setQuery];
+}
+
 function SubReddit() {
   let { subRedditName } = useParams<any>();
 
@@ -186,8 +217,8 @@ function SubReddit() {
 
   const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
 
-  const [viewType, setViewType] = useState(ViewType.HOT);
-  const [timeRange, setTimeRange] = useState(TimeRange.TODAY);
+  const [timeRange, setTimeRange] = useQueryParam("timeRange", TimeRange.TODAY);
+  const [viewType, setViewType] = useQueryParam("viewType", ViewType.HOT);
 
   const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange), fetcher, {
     revalidateOnFocus: false,
