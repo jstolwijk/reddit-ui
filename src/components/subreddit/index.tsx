@@ -222,7 +222,9 @@ export default function SubReddit() {
               <Stack>
                 <Block>
                   <div className="px-2">
-                    <h1 className="font-bold text-2xl">{subRedditName || "Front page"}</h1>
+                    <h1 className="capitalize text-3xl font-extrabold text-gray-900 tracking-tight">
+                      {subRedditName || "Front page"}
+                    </h1>
                     <div className="py-4 flex ">
                       <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
                       {viewType === ViewType.TOP && (
@@ -404,12 +406,12 @@ const Post: FC<PostProps> = ({
     <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>
       <div className="p-1 overflow-hidden">
         <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h2>
         </TitleLink>
         {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
 
         {expandMedia && mediaEmbed.content && (
-          <div dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
+          <div className="mx-auto" dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
         )}
         {expandMedia && type === "image" && (
           <div className="p-2">
