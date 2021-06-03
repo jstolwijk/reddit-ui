@@ -1,9 +1,7 @@
 import React, { FC } from "react";
 import useSWR from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect, useHistory } from "react-router-dom";
-import SubReddit from "./components/subreddit";
-
-const fetcher = (url: string) => fetch(url).then((response) => response.json());
+import SubReddit, { fetcher } from "./components/subreddit";
 
 const App = () => {
   return (

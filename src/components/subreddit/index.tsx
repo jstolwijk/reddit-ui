@@ -117,8 +117,18 @@ const TimeRangeSelector: FC<TimeRangeSelectorProps> = ({ timeRange, onTimeRangeC
   );
 };
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json());
+export const fetcher = async (url: string) => {
+  const response = await fetch(url);
 
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const error = new Error("An error occurred while fetching the data.") as any;
+    error.info = await response.json();
+    error.status = response.status;
+    throw error;
+  }
+};
 export default function SubReddit() {
   let { subRedditName } = useParams<any>();
 
@@ -129,11 +139,20 @@ export default function SubReddit() {
   const [timeRange, setTimeRange] = useQueryParam("t", TimeRange.TODAY);
   const [viewType, setViewType] = useQueryParam("viewType", ViewType.HOT);
 
-  const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange), fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateAll: false,
-  });
+  const { data, setSize, error, isValidating } = useSWRInfinite(
+    (pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange),
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateAll: false,
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        if (error.status === 404) return;
+
+        setTimeout(() => revalidate({ retryCount }), 5000);
+      },
+    }
+  );
 
   const [value, setNewValue] = useLocalStorage("favorites", {});
 
@@ -216,31 +235,35 @@ export default function SubReddit() {
                 </Block>
               </Stack>
               <Stack>
-                {!data && <p>Pending</p>}
-                {data
-                  ?.flatMap((d) => d?.data?.children)
-                  ?.map((post: any) => (
-                    <>
-                      <Post
-                        id={post.data.id}
-                        expandMedia={expandMedia}
-                        stickied={post.data.stickied}
-                        key={post.data.permalink}
-                        title={post.data.title}
-                        postedBy={post.data.author}
-                        media={post.data.media}
-                        createdAt={post.data.created_utc}
-                        mediaEmbed={post.data.media_embed}
-                        type={post.data.post_hint}
-                        url={post.data.url}
-                        subReddit={post.data.subreddit}
-                      />
-                    </>
-                  ))}
+                {error && <SubredditError statusCode={error.status} />}
+                {!error && !data && <p>Pending</p>}
+                {!error &&
+                  data
+                    ?.flatMap((d) => d?.data?.children)
+                    ?.map((post: any) => (
+                      <>
+                        <Post
+                          id={post.data.id}
+                          expandMedia={expandMedia}
+                          stickied={post.data.stickied}
+                          key={post.data.permalink}
+                          title={post.data.title}
+                          postedBy={post.data.author}
+                          media={post.data.media}
+                          createdAt={post.data.created_utc}
+                          mediaEmbed={post.data.media_embed}
+                          type={post.data.post_hint}
+                          url={post.data.url}
+                          subReddit={post.data.subreddit}
+                        />
+                      </>
+                    ))}
               </Stack>
-              <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
-                <h2>Load More</h2>
-              </div>
+              {!error && (
+                <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
+                  <h2>Load More</h2>
+                </div>
+              )}
             </div>
             {screenSize > ScreenSize.md && (
               <div className="col-span-2">
@@ -259,6 +282,17 @@ export default function SubReddit() {
     </>
   );
 }
+
+interface SubredditErrorProps {
+  statusCode: number;
+}
+const SubredditError: FC<SubredditErrorProps> = ({ statusCode }) => {
+  return (
+    <div>
+      <p>{statusCode === 404 ? "Subreddit not found" : "Unknown error occured"}</p>
+    </div>
+  );
+};
 
 interface SettingsProps {
   refreshData: boolean;
