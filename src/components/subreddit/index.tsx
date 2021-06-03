@@ -402,10 +402,13 @@ const Post: FC<PostProps> = ({
     return timeAgo(d);
   }, [createdAt]);
 
+  const externalUrl =
+    url && url.startsWith("https://www.reddit.com/r/") && url.includes("/comments/") ? undefined : url;
+
   return (
     <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>
       <div className="p-1 overflow-hidden">
-        <TitleLink externalUrl={url} internalUrl={"/r/" + subReddit + "/comments/" + id}>
+        <TitleLink externalUrl={externalUrl} internalUrl={"/r/" + subReddit + "/comments/" + id}>
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h2>
         </TitleLink>
         {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}

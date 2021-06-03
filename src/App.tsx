@@ -47,13 +47,13 @@ const Comments = () => {
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
             <div className="py-4">
               {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
-              <a href={postData.url}>{postData.url}</a>
+              {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
+              {postData.selftext && (
+                <div>
+                  <ReactMarkdown>{postData.selftext}</ReactMarkdown>
+                </div>
+              )}
             </div>
-            {postData.selftext && (
-              <div>
-                <ReactMarkdown>{postData.selftext}</ReactMarkdown>
-              </div>
-            )}
           </div>
         </Block>
         <div>
