@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect, useHistory } from "react-router-dom";
 import SubReddit, { fetcher } from "./components/subreddit";
 import { Block, Stack } from "./components/Components";
+import ReactMarkdown from "react-markdown";
 
 const App = () => {
   return (
@@ -48,7 +49,11 @@ const Comments = () => {
               {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
               <a href={postData.url}>{postData.url}</a>
             </div>
-            <div>{postData.selftext}</div>
+            {postData.selftext && (
+              <div>
+                <ReactMarkdown>{postData.selftext}</ReactMarkdown>
+              </div>
+            )}
           </div>
         </Block>
         <div>
@@ -67,7 +72,7 @@ const Comment: FC<any> = ({ comment, depth }) => {
       <Block>
         <div>
           <div>
-            {comment.body} - <p>{comment.author}</p>
+            {comment.body} - <p className="font-semibold">{comment.author}</p>
           </div>
           <div>
             {comment.replies &&
