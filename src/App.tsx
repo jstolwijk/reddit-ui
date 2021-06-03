@@ -73,9 +73,9 @@ const Comment: FC<any> = ({ comment, depth }) => {
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
 enum ViewType {
-  TOP = "TOP",
-  NEW = "NEW",
-  HOT = "HOT",
+  TOP = "top",
+  NEW = "new",
+  HOT = "hot",
 }
 
 enum TimeRange {
@@ -217,7 +217,7 @@ function SubReddit() {
 
   const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
 
-  const [timeRange, setTimeRange] = useQueryParam("timeRange", TimeRange.TODAY);
+  const [timeRange, setTimeRange] = useQueryParam("t", TimeRange.TODAY);
   const [viewType, setViewType] = useQueryParam("viewType", ViewType.HOT);
 
   const { data, setSize } = useSWRInfinite((pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange), fetcher, {
