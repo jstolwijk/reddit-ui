@@ -255,6 +255,7 @@ export default function SubReddit() {
                       type={post.data.post_hint}
                       url={post.data.url}
                       subReddit={post.data.subreddit}
+                      domain={post.data.domain}
                     />
                   </>
                 ))}
@@ -371,6 +372,7 @@ interface PostProps {
   type?: string;
   url?: string;
   subReddit: string;
+  domain: string;
 }
 
 const htmlDecode = (input: string): string | null => {
@@ -391,6 +393,7 @@ const Post: FC<PostProps> = ({
   type,
   url,
   subReddit,
+  domain,
 }) => {
   const createdAtFormattedString = useMemo(() => {
     const d = new Date(0);
@@ -399,7 +402,11 @@ const Post: FC<PostProps> = ({
   }, [createdAt]);
 
   const externalUrl =
-    url && url.startsWith("https://www.reddit.com/r/") && url.includes("/comments/") ? undefined : url;
+    domain.startsWith("self.") || domain.endsWith("redd.it")
+      ? undefined
+      : url && url.startsWith("https://www.reddit.com")
+      ? url.replace("https://www.reddit.com", "")
+      : url;
 
   return (
     <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>

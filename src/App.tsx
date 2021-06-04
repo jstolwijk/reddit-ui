@@ -76,7 +76,7 @@ const Comment: FC<any> = ({ comment, depth }) => {
       <Block>
         <div>
           <div>
-            {comment.body} - <p className="font-semibold">{comment.author}</p>
+            <ReactMarkdown>{comment.body}</ReactMarkdown> - <p className="font-semibold">{comment.author}</p>
           </div>
           <div>
             {comment.replies &&
