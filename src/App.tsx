@@ -28,7 +28,6 @@ const App = () => {
 
 const Comments = () => {
   let { subRedditName, commentsId } = useParams<any>();
-  const history = useHistory();
   const { data } = useSWR(`https://www.reddit.com/r/${subRedditName}/comments/${commentsId}.json`, fetcher);
 
   if (!data) {
@@ -39,29 +38,30 @@ const Comments = () => {
   const comments = data[1].data.children.map((c: any) => c.data);
 
   return (
-    <div className="container p-4 mx-auto">
-      <Stack>
-        <button onClick={history.goBack}>Back</button>
-        <Block>
-          <div className="px-2 overflow-hidden">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
-            <div className="py-4">
-              {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
-              {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
-              {postData.selftext && (
-                <div>
-                  <ReactMarkdown>{postData.selftext}</ReactMarkdown>
-                </div>
-              )}
+    <div className="bg-gray-100 md:px-2">
+      <div className="container mx-auto">
+        <Stack>
+          <Block>
+            <div className="px-2 overflow-hidden">
+              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
+              <div className="py-4">
+                {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
+                {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
+                {postData.selftext && (
+                  <div>
+                    <ReactMarkdown>{postData.selftext}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
             </div>
+          </Block>
+          <div>
+            {comments.map((comment: any) => (
+              <Comment comment={comment} depth={1} />
+            ))}
           </div>
-        </Block>
-        <div>
-          {comments.map((comment: any) => (
-            <Comment comment={comment} depth={1} />
-          ))}
-        </div>
-      </Stack>
+        </Stack>
+      </div>
     </div>
   );
 };
