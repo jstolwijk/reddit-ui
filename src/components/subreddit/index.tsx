@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useSWRInfinite } from "swr";
 import { timeAgo } from "../../date";
 import { useLocalStorage } from "../../use-local-storage";
-import { Block, ScreenSize, Stack, useScreenSize } from "../Components";
+import { Block, Container, ScreenSize, Stack, useScreenSize } from "../Components";
 import { useQueryParam } from "../use-query-params";
 
 const increment = (number: number | undefined) => (number ?? 0) + 1;
@@ -214,74 +214,70 @@ export default function SubReddit() {
   const screenSize = useScreenSize();
 
   return (
-    <>
-      <div className="bg-gray-100 md:px-2">
-        <div className="container mx-auto">
-          <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
-            <div className="col-span-10">
-              <Stack>
-                <Block>
-                  <div className="px-2">
-                    <h1 className="capitalize text-3xl font-bold text-gray-900 tracking-tight">
-                      {subRedditName || "Frontpage"}
-                    </h1>
-                    <div className="py-4 flex ">
-                      <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-                      {viewType === ViewType.TOP && (
-                        <div className="pl-2">
-                          <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
-                        </div>
-                      )}
+    <Container>
+      <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
+        <div className="col-span-10">
+          <Stack>
+            <Block>
+              <div className="px-2">
+                <h1 className="capitalize text-3xl font-bold text-gray-900 tracking-tight">
+                  {subRedditName || "Frontpage"}
+                </h1>
+                <div className="py-4 flex ">
+                  <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+                  {viewType === ViewType.TOP && (
+                    <div className="pl-2">
+                      <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
                     </div>
-                  </div>
-                </Block>
-              </Stack>
-              <Stack>
-                {error && <SubredditError statusCode={error.status} />}
-                {!error && !data && <p>Pending</p>}
-                {!error &&
-                  data
-                    ?.flatMap((d) => d?.data?.children)
-                    ?.map((post: any) => (
-                      <>
-                        <Post
-                          id={post.data.id}
-                          expandMedia={expandMedia}
-                          stickied={post.data.stickied}
-                          key={post.data.permalink}
-                          title={post.data.title}
-                          postedBy={post.data.author}
-                          media={post.data.media}
-                          createdAt={post.data.created_utc}
-                          mediaEmbed={post.data.media_embed}
-                          type={post.data.post_hint}
-                          url={post.data.url}
-                          subReddit={post.data.subreddit}
-                        />
-                      </>
-                    ))}
-              </Stack>
-              {!error && (
-                <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
-                  <h2>Load More</h2>
+                  )}
                 </div>
-              )}
-            </div>
-            {screenSize > ScreenSize.md && (
-              <div className="col-span-2">
-                <Settings
-                  refreshData={refreshData}
-                  expandMedia={expandMedia}
-                  favorites={favorites}
-                  setExpandMedia={setExpandMedia}
-                  setRefreshData={setRefreshData}
-                />
               </div>
-            )}
-          </div>
+            </Block>
+          </Stack>
+          <Stack>
+            {error && <SubredditError statusCode={error.status} />}
+            {!error && !data && <p>Pending</p>}
+            {!error &&
+              data
+                ?.flatMap((d) => d?.data?.children)
+                ?.map((post: any) => (
+                  <>
+                    <Post
+                      id={post.data.id}
+                      expandMedia={expandMedia}
+                      stickied={post.data.stickied}
+                      key={post.data.permalink}
+                      title={post.data.title}
+                      postedBy={post.data.author}
+                      media={post.data.media}
+                      createdAt={post.data.created_utc}
+                      mediaEmbed={post.data.media_embed}
+                      type={post.data.post_hint}
+                      url={post.data.url}
+                      subReddit={post.data.subreddit}
+                    />
+                  </>
+                ))}
+          </Stack>
+          {!error && (
+            <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
+              <h2>Load More</h2>
+            </div>
+          )}
         </div>
+        {screenSize > ScreenSize.md && (
+          <div className="col-span-2">
+            <Settings
+              refreshData={refreshData}
+              expandMedia={expandMedia}
+              favorites={favorites}
+              setExpandMedia={setExpandMedia}
+              setRefreshData={setRefreshData}
+            />
+          </div>
+        )}
       </div>
-    </>
+    </Container>
   );
 }
 

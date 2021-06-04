@@ -1,8 +1,8 @@
 import React, { FC } from "react";
 import useSWR from "swr";
-import { BrowserRouter as Router, Switch, Route, Link, useParams, Redirect, useHistory } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, useParams, Redirect } from "react-router-dom";
 import SubReddit, { fetcher } from "./components/subreddit";
-import { Block, Stack } from "./components/Components";
+import { Block, Container, Stack } from "./components/Components";
 import ReactMarkdown from "react-markdown";
 
 const App = () => {
@@ -38,31 +38,29 @@ const Comments = () => {
   const comments = data[1].data.children.map((c: any) => c.data);
 
   return (
-    <div className="bg-gray-100 md:px-2">
-      <div className="container mx-auto">
-        <Stack>
-          <Block>
-            <div className="px-2 overflow-hidden">
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
-              <div className="py-4">
-                {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
-                {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
-                {postData.selftext && (
-                  <div>
-                    <ReactMarkdown>{postData.selftext}</ReactMarkdown>
-                  </div>
-                )}
-              </div>
+    <Container>
+      <Stack>
+        <Block>
+          <div className="px-2 overflow-hidden">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
+            <div className="py-4">
+              {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
+              {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
+              {postData.selftext && (
+                <div>
+                  <ReactMarkdown>{postData.selftext}</ReactMarkdown>
+                </div>
+              )}
             </div>
-          </Block>
-          <div>
-            {comments.map((comment: any) => (
-              <Comment comment={comment} depth={1} />
-            ))}
           </div>
-        </Stack>
-      </div>
-    </div>
+        </Block>
+        <div>
+          {comments.map((comment: any) => (
+            <Comment comment={comment} depth={1} />
+          ))}
+        </div>
+      </Stack>
+    </Container>
   );
 };
 

@@ -12,6 +12,14 @@ export const Stack: React.FC = ({ children }) => {
   return <div className="sm:py-1 lg:py-2 sm:space-y-2 space-y-1">{children}</div>;
 };
 
+export const Container: React.FC = ({ children }) => {
+  return (
+    <div className="bg-gray-100 md:px-2">
+      <div className="container mx-auto">{children}</div>
+    </div>
+  );
+};
+
 export enum ScreenSize {
   none = 0,
   sm = 1,
