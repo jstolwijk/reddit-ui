@@ -1,6 +1,6 @@
-import React, { FC } from "react";
+import React, { FC, useEffect } from "react";
 import useSWR from "swr";
-import { BrowserRouter as Router, Switch, Route, useParams, Redirect } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, useParams, Redirect, useLocation } from "react-router-dom";
 import SubReddit, { fetcher } from "./components/subreddit";
 import { Block, Container, Stack } from "./components/Components";
 import ReactMarkdown from "react-markdown";
@@ -30,8 +30,14 @@ const Comments = () => {
   let { subRedditName, commentsId } = useParams<any>();
   const { data } = useSWR(`https://www.reddit.com/r/${subRedditName}/comments/${commentsId}.json`, fetcher);
 
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   if (!data) {
-    return <div>loading</div>;
+    return <PendingCommentsPage />;
   }
 
   const postData = data[0].data.children[0].data;
@@ -81,6 +87,53 @@ const Comment: FC<any> = ({ comment, depth }) => {
         </div>
       </Block>
     </Stack>
+  );
+};
+
+const PendingCommentsPage = () => {
+  return (
+    <Container>
+      <Stack>
+        <Block>
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-8 bg-gray-300 rounded w-3/4"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/6"></div>
+                <div className="h-4 bg-gray-300 rounded w-4/6"></div>
+                <div className="h-4 bg-gray-300 rounded w-4/6"></div>
+              </div>
+            </div>
+          </div>
+        </Block>
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+        <PendingComment />
+      </Stack>
+    </Container>
+  );
+};
+
+const PendingComment = () => {
+  return (
+    <Block>
+      <div className="animate-pulse flex space-x-4">
+        <div className="flex-1 space-y-4 py-2">
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/6"></div>
+          </div>
+        </div>
+      </div>
+    </Block>
   );
 };
 
