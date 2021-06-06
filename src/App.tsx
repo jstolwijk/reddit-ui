@@ -11,12 +11,34 @@ const increment = (number: number | undefined) => (number ?? 0) + 1;
 const App = () => {
   return (
     <Router>
-      <Inner />
+      <Container>
+        <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
+          <Switch>
+            <Route
+              path="/r/:subRedditName?"
+              render={({ match: { url } }) => (
+                <>
+                  <Route path={`/r/:subRedditName/comments/:commentsId`}>
+                    <Comments />
+                  </Route>
+                  <Route path="/r/:subRedditName?" exact>
+                    <SubReddit />
+                  </Route>
+                  <Sidebar />
+                </>
+              )}
+            />
+            <Route>
+              <Redirect to="/r/" />
+            </Route>
+          </Switch>
+        </div>
+      </Container>
     </Router>
   );
 };
 
-const Inner = () => {
+const Sidebar = () => {
   let { subRedditName } = useParams<any>();
 
   const [value, setNewValue] = useLocalStorage("favorites", {});
@@ -43,30 +65,12 @@ const Inner = () => {
 
   const screenSize = useScreenSize();
   const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
-  return (
-    <Container>
-      <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
-        <Switch>
-          <Route path="/r/:subRedditName/comments/:commentsId">
-            <Comments />
-          </Route>
-          <Route path="/r/:subRedditName">
-            <SubReddit />
-          </Route>
-          <Route path="/r/">
-            <SubReddit />
-          </Route>
-          <Route>
-            <Redirect to="/r/" />
-          </Route>
-        </Switch>
-        {screenSize > ScreenSize.md && (
-          <div className="col-span-2">
-            <Settings expandMedia={expandMedia} favorites={favorites} setExpandMedia={setExpandMedia} />
-          </div>
-        )}
-      </div>
-    </Container>
+  return screenSize > ScreenSize.md ? (
+    <div className="col-span-2">
+      <Settings expandMedia={expandMedia} favorites={favorites} setExpandMedia={setExpandMedia} />
+    </div>
+  ) : (
+    <></>
   );
 };
 
@@ -77,11 +81,20 @@ interface SettingsProps {
 }
 
 const Settings: FC<SettingsProps> = ({ expandMedia, setExpandMedia, favorites }) => {
+  let { subRedditName } = useParams<any>();
+
   return (
     <div className="sticky top-0">
       <Stack>
         <Block>
-          <Link to="/">Frontpage</Link>
+          <div>
+            <Link to="/">Frontpage</Link>
+          </div>
+          {subRedditName && (
+            <div>
+              <Link to={"/r/" + subRedditName}>{subRedditName}</Link>
+            </div>
+          )}
           <div className="flex flex-col">
             <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
           </div>

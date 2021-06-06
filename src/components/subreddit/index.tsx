@@ -1,10 +1,10 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router-dom";
 import { useSWRInfinite } from "swr";
 import { timeAgo } from "../../date";
 import { useLocalStorage } from "../../use-local-storage";
-import { Block, Container, ScreenSize, Stack, useScreenSize } from "../Components";
+import { Block, Stack } from "../Components";
 import { useQueryParam } from "../use-query-params";
 
 enum ViewType {
@@ -129,13 +129,12 @@ export const fetcher = async (url: string) => {
 };
 export default function SubReddit() {
   let { subRedditName } = useParams<any>();
-
   const [expandMedia, _] = useLocalStorage("expandMedia", true);
 
   const [timeRange, setTimeRange] = useQueryParam("t", TimeRange.TODAY);
   const [viewType, setViewType] = useQueryParam("viewType", ViewType.HOT);
 
-  const { data, setSize, error, isValidating } = useSWRInfinite(
+  const { data, setSize, error } = useSWRInfinite(
     (pi, ppd) => getKey(pi, ppd, subRedditName, viewType, timeRange),
     fetcher,
     {
