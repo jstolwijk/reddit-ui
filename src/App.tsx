@@ -1,28 +1,131 @@
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useMemo } from "react";
 import useSWR from "swr";
-import { BrowserRouter as Router, Switch, Route, useParams, Redirect, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, useParams, Redirect, useLocation, Link } from "react-router-dom";
 import SubReddit, { fetcher } from "./components/subreddit";
-import { Block, Container, Stack } from "./components/Components";
+import { Block, Container, ScreenSize, Stack, useScreenSize } from "./components/Components";
 import ReactMarkdown from "react-markdown";
+import { useLocalStorage } from "./use-local-storage";
+
+const increment = (number: number | undefined) => (number ?? 0) + 1;
 
 const App = () => {
   return (
     <Router>
-      <Switch>
-        <Route path="/r/:subRedditName/comments/:commentsId">
-          <Comments />
-        </Route>
-        <Route path="/r/:subRedditName">
-          <SubReddit />
-        </Route>
-        <Route path="/r/">
-          <SubReddit />
-        </Route>
-        <Route>
-          <Redirect to="/r/" />
-        </Route>
-      </Switch>
+      <Inner />
     </Router>
+  );
+};
+
+const Inner = () => {
+  let { subRedditName } = useParams<any>();
+
+  const [value, setNewValue] = useLocalStorage("favorites", {});
+
+  useEffect(() => {
+    if (!subRedditName || subRedditName === "comments") {
+      return;
+    }
+    setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
+
+    // eslint tells us to add setNewValue and value to the depenendency list, if we do this the component will get stuck in a rerender loop since value is a complex object
+    // eslint-disable-next-line
+  }, [subRedditName]);
+
+  const favorites: string[] = useMemo(
+    () =>
+      Object.keys(value)
+        .map((k) => ({ key: k, value: value[k] as number }))
+        .sort((a, b) => (a.value > b.value ? -1 : 1))
+        .map((e) => e.key)
+        .slice(0, 20),
+    [value]
+  );
+
+  const screenSize = useScreenSize();
+  const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
+  return (
+    <Container>
+      <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
+        <Switch>
+          <Route path="/r/:subRedditName/comments/:commentsId">
+            <Comments />
+          </Route>
+          <Route path="/r/:subRedditName">
+            <SubReddit />
+          </Route>
+          <Route path="/r/">
+            <SubReddit />
+          </Route>
+          <Route>
+            <Redirect to="/r/" />
+          </Route>
+        </Switch>
+        {screenSize > ScreenSize.md && (
+          <div className="col-span-2">
+            <Settings expandMedia={expandMedia} favorites={favorites} setExpandMedia={setExpandMedia} />
+          </div>
+        )}
+      </div>
+    </Container>
+  );
+};
+
+interface SettingsProps {
+  expandMedia: boolean;
+  setExpandMedia: (bool: boolean) => void;
+  favorites: any[];
+}
+
+const Settings: FC<SettingsProps> = ({ expandMedia, setExpandMedia, favorites }) => {
+  return (
+    <div className="sticky top-0">
+      <Stack>
+        <Block>
+          <Link to="/">Frontpage</Link>
+          <div className="flex flex-col">
+            <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
+          </div>
+        </Block>
+        <Block>
+          Your favorite subreddits:
+          <ul>
+            {favorites.map((favorite) => (
+              <li>
+                <Link to={"/r/" + favorite} className="text-blue-600">
+                  {favorite}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Block>
+      </Stack>
+    </div>
+  );
+};
+
+interface ToggleProps {
+  id: string;
+
+  label: string;
+  checked: boolean;
+  onToggle: (newValue: boolean) => void;
+}
+
+const Toggle: FC<ToggleProps> = ({ id, label, checked, onToggle }) => {
+  const toggleClasses = checked
+    ? "absolute block w-4 h-4 mt-1 ml-1 rounded-full shadow inset-y-0 left-0 focus-within:shadow-outline transition-transform duration-300 ease-in-out bg-blue-400 transform translate-x-full"
+    : "absolute block w-4 h-4 mt-1 ml-1 bg-white rounded-full shadow inset-y-0 left-0 focus-within:shadow-outline transition-transform duration-300 ease-in-out";
+
+  return (
+    <label htmlFor={id} className="mt-3 inline-flex items-center cursor-pointer">
+      <span className="relative">
+        <span className="block w-10 h-6 bg-gray-300 rounded-full shadow-inner"></span>
+        <span className={toggleClasses}>
+          <input id={id} type="checkbox" className="absolute opacity-0 w-0 h-0" onClick={() => onToggle(!checked)} />
+        </span>
+      </span>
+      <span className="ml-3 text-sm">{label}</span>
+    </label>
   );
 };
 
@@ -44,29 +147,31 @@ const Comments = () => {
   const comments = data[1].data.children.map((c: any) => c.data);
 
   return (
-    <Container>
-      <Stack>
-        <Block>
-          <div className="px-2 overflow-hidden">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
-            <div className="py-4">
-              {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
-              {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
-              {postData.selftext && (
-                <div>
-                  <ReactMarkdown>{postData.selftext}</ReactMarkdown>
-                </div>
-              )}
+    <div className="col-span-10">
+      <Container>
+        <Stack>
+          <Block>
+            <div className="px-2 overflow-hidden">
+              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
+              <div className="py-4">
+                {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
+                {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
+                {postData.selftext && (
+                  <div>
+                    <ReactMarkdown>{postData.selftext}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
             </div>
+          </Block>
+          <div>
+            {comments.map((comment: any) => (
+              <Comment comment={comment} depth={1} />
+            ))}
           </div>
-        </Block>
-        <div>
-          {comments.map((comment: any) => (
-            <Comment comment={comment} depth={1} />
-          ))}
-        </div>
-      </Stack>
-    </Container>
+        </Stack>
+      </Container>
+    </div>
   );
 };
 

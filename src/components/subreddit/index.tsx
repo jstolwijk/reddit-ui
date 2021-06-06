@@ -7,8 +7,6 @@ import { useLocalStorage } from "../../use-local-storage";
 import { Block, Container, ScreenSize, Stack, useScreenSize } from "../Components";
 import { useQueryParam } from "../use-query-params";
 
-const increment = (number: number | undefined) => (number ?? 0) + 1;
-
 enum ViewType {
   TOP = "top",
   NEW = "new",
@@ -132,9 +130,7 @@ export const fetcher = async (url: string) => {
 export default function SubReddit() {
   let { subRedditName } = useParams<any>();
 
-  const [refreshData, setRefreshData] = useState(true);
-
-  const [expandMedia, setExpandMedia] = useLocalStorage("expandMedia", true);
+  const [expandMedia, _] = useLocalStorage("expandMedia", true);
 
   const [timeRange, setTimeRange] = useQueryParam("t", TimeRange.TODAY);
   const [viewType, setViewType] = useQueryParam("viewType", ViewType.HOT);
@@ -153,18 +149,6 @@ export default function SubReddit() {
       },
     }
   );
-
-  const [value, setNewValue] = useLocalStorage("favorites", {});
-
-  useEffect(() => {
-    if (!subRedditName || subRedditName === "comments") {
-      return;
-    }
-    setNewValue({ ...value, [subRedditName]: increment(value[subRedditName]) });
-
-    // eslint tells us to add setNewValue and value to the depenendency list, if we do this the component will get stuck in a rerender loop since value is a complex object
-    // eslint-disable-next-line
-  }, [subRedditName]);
 
   const loader = useRef(null);
 
@@ -201,84 +185,57 @@ export default function SubReddit() {
     };
   }, [handleObserver]);
 
-  const favorites: string[] = useMemo(
-    () =>
-      Object.keys(value)
-        .map((k) => ({ key: k, value: value[k] as number }))
-        .sort((a, b) => (a.value > b.value ? -1 : 1))
-        .map((e) => e.key)
-        .slice(0, 20),
-    [value]
-  );
-
-  const screenSize = useScreenSize();
-
   return (
-    <Container>
-      <div className="lg:grid lg:grid-flow-col lg:grid-cols-12 lg:space-x-2 space-y-1">
-        <div className="col-span-10">
-          <Stack>
-            <Block>
-              <div className="px-2">
-                <h1 className="capitalize text-3xl font-bold text-gray-900 tracking-tight">
-                  {subRedditName || "Frontpage"}
-                </h1>
-                <div className="py-4 flex ">
-                  <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
-                  {viewType === ViewType.TOP && (
-                    <div className="pl-2">
-                      <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
-                    </div>
-                  )}
+    <div className="col-span-10">
+      <Stack>
+        <Block>
+          <div className="px-2">
+            <h1 className="capitalize text-3xl font-bold text-gray-900 tracking-tight">
+              {subRedditName || "Frontpage"}
+            </h1>
+            <div className="py-4 flex ">
+              <ViewTypeSelector viewType={viewType} onViewTypeChange={setViewType} />
+              {viewType === ViewType.TOP && (
+                <div className="pl-2">
+                  <TimeRangeSelector timeRange={timeRange} onTimeRangeChanged={setTimeRange} />
                 </div>
-              </div>
-            </Block>
-          </Stack>
-          <Stack>
-            {error && <SubredditError statusCode={error.status} />}
-            {!error && !data && <LoadingPosts />}
-            {!error &&
-              data
-                ?.flatMap((d) => d?.data?.children)
-                ?.map((post: any) => (
-                  <>
-                    <Post
-                      id={post.data.id}
-                      expandMedia={expandMedia}
-                      stickied={post.data.stickied}
-                      key={post.data.permalink}
-                      title={post.data.title}
-                      postedBy={post.data.author}
-                      media={post.data.media}
-                      createdAt={post.data.created_utc}
-                      mediaEmbed={post.data.media_embed}
-                      type={post.data.post_hint}
-                      url={post.data.url}
-                      subReddit={post.data.subreddit}
-                      domain={post.data.domain}
-                    />
-                  </>
-                ))}
-          </Stack>
-          {!error && (
-            <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
-              <h2>Load More</h2>
+              )}
             </div>
-          )}
-        </div>
-        {screenSize > ScreenSize.md && (
-          <div className="col-span-2">
-            <Settings
-              refreshData={refreshData}
-              expandMedia={expandMedia}
-              favorites={favorites}
-              setExpandMedia={setExpandMedia}
-              setRefreshData={setRefreshData}
-            />
           </div>
-        )}
-      </div>
-    </Container>
+        </Block>
+      </Stack>
+      <Stack>
+        {error && <SubredditError statusCode={error.status} />}
+        {!error && !data && <LoadingPosts />}
+        {!error &&
+          data
+            ?.flatMap((d) => d?.data?.children)
+            ?.map((post: any) => (
+              <>
+                <Post
+                  id={post.data.id}
+                  expandMedia={expandMedia}
+                  stickied={post.data.stickied}
+                  key={post.data.permalink}
+                  title={post.data.title}
+                  postedBy={post.data.author}
+                  media={post.data.media}
+                  createdAt={post.data.created_utc}
+                  mediaEmbed={post.data.media_embed}
+                  type={post.data.post_hint}
+                  url={post.data.url}
+                  subReddit={post.data.subreddit}
+                  domain={post.data.domain}
+                />
+              </>
+            ))}
+      </Stack>
+      {!error && (
+        <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
+          <h2>Load More</h2>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -408,69 +365,6 @@ const SubredditError: FC<SubredditErrorProps> = ({ statusCode }) => {
     <div>
       <p>{statusCode === 404 ? "Subreddit not found" : "Unknown error occured"}</p>
     </div>
-  );
-};
-
-interface SettingsProps {
-  refreshData: boolean;
-  setRefreshData: (bool: boolean) => void;
-  expandMedia: boolean;
-  setExpandMedia: (bool: boolean) => void;
-  favorites: any[];
-}
-
-const Settings: FC<SettingsProps> = ({ refreshData, setRefreshData, expandMedia, setExpandMedia, favorites }) => {
-  return (
-    <div className="sticky top-0">
-      <Stack>
-        <Block>
-          <Link to="/">Frontpage</Link>
-          <div className="flex flex-col">
-            <Toggle id="live-feed" label="Live feed" checked={refreshData} onToggle={setRefreshData} />
-            <Toggle id="expand-media" label="Expand media" checked={expandMedia} onToggle={setExpandMedia} />
-            <Toggle id="show-nsfw" label="NSFW" checked={refreshData} onToggle={setRefreshData} />
-          </div>
-        </Block>
-        <Block>
-          Your favorite subreddits:
-          <ul>
-            {favorites.map((favorite) => (
-              <li>
-                <Link to={"/r/" + favorite} className="text-blue-600">
-                  {favorite}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Block>
-      </Stack>
-    </div>
-  );
-};
-
-interface ToggleProps {
-  id: string;
-
-  label: string;
-  checked: boolean;
-  onToggle: (newValue: boolean) => void;
-}
-
-const Toggle: FC<ToggleProps> = ({ id, label, checked, onToggle }) => {
-  const toggleClasses = checked
-    ? "absolute block w-4 h-4 mt-1 ml-1 rounded-full shadow inset-y-0 left-0 focus-within:shadow-outline transition-transform duration-300 ease-in-out bg-blue-400 transform translate-x-full"
-    : "absolute block w-4 h-4 mt-1 ml-1 bg-white rounded-full shadow inset-y-0 left-0 focus-within:shadow-outline transition-transform duration-300 ease-in-out";
-
-  return (
-    <label htmlFor={id} className="mt-3 inline-flex items-center cursor-pointer">
-      <span className="relative">
-        <span className="block w-10 h-6 bg-gray-300 rounded-full shadow-inner"></span>
-        <span className={toggleClasses}>
-          <input id={id} type="checkbox" className="absolute opacity-0 w-0 h-0" onClick={() => onToggle(!checked)} />
-        </span>
-      </span>
-      <span className="ml-3 text-sm">{label}</span>
-    </label>
   );
 };
 
