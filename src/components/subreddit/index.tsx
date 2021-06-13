@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router-dom";
 import { useSWRInfinite } from "swr";
@@ -127,6 +127,19 @@ export const fetcher = async (url: string) => {
     throw error;
   }
 };
+
+const extractGallery = (post: any): string[] => {
+  try {
+    return (
+      (post.data.media_metadata &&
+        Object.values(post.data.media_metadata).map((item: any) => item.s.u.replace(/&amp;/g, "&"))) ||
+      []
+    );
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+};
 export default function SubReddit() {
   let { subRedditName } = useParams<any>();
   const [expandMedia, _] = useLocalStorage("expandMedia", true);
@@ -183,6 +196,7 @@ export default function SubReddit() {
       observer?.disconnect();
     };
   }, [handleObserver]);
+  console.log({ data });
 
   return (
     <div className="col-span-10">
@@ -209,25 +223,30 @@ export default function SubReddit() {
         {!error &&
           data
             ?.flatMap((d) => d?.data?.children)
-            ?.map((post: any) => (
-              <>
-                <Post
-                  id={post.data.id}
-                  expandMedia={expandMedia}
-                  stickied={post.data.stickied}
-                  key={post.data.permalink}
-                  title={post.data.title}
-                  postedBy={post.data.author}
-                  media={post.data.media}
-                  createdAt={post.data.created_utc}
-                  mediaEmbed={post.data.media_embed}
-                  type={post.data.post_hint}
-                  url={post.data.url}
-                  subReddit={post.data.subreddit}
-                  domain={post.data.domain}
-                />
-              </>
-            ))}
+            ?.map((post: any) => {
+              const gallery = extractGallery(post);
+
+              return (
+                <>
+                  <Post
+                    id={post.data.id}
+                    expandMedia={expandMedia}
+                    stickied={post.data.stickied}
+                    key={post.data.permalink}
+                    title={post.data.title}
+                    postedBy={post.data.author}
+                    media={post.data.media}
+                    createdAt={post.data.created_utc}
+                    mediaEmbed={post.data.media_embed}
+                    type={post.data.post_hint}
+                    url={post.data.url}
+                    subReddit={post.data.subreddit}
+                    domain={post.data.domain}
+                    gallery={gallery}
+                  />
+                </>
+              );
+            })}
       </Stack>
       {!error && (
         <div className="p-32" ref={loader} onClick={() => setSize((page) => page + 1)}>
@@ -384,6 +403,7 @@ interface PostProps {
   url?: string;
   subReddit: string;
   domain: string;
+  gallery: string[];
 }
 
 const htmlDecode = (input: string): string | null => {
@@ -405,6 +425,7 @@ const Post: FC<PostProps> = ({
   url,
   subReddit,
   domain,
+  gallery,
 }) => {
   const createdAtFormattedString = useMemo(() => {
     const d = new Date(0);
@@ -418,7 +439,7 @@ const Post: FC<PostProps> = ({
       : url && url.startsWith("https://www.reddit.com")
       ? url.replace("https://www.reddit.com", "")
       : url;
-
+  console.log({ gallery });
   return (
     <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>
       <div className="p-1 overflow-hidden">
@@ -435,6 +456,7 @@ const Post: FC<PostProps> = ({
             <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
           </div>
         )}
+        {gallery.length > 0 && <Gallery gallery={gallery} />}
       </div>
       <div className="p-1 flex justify-between">
         <div>
@@ -446,6 +468,34 @@ const Post: FC<PostProps> = ({
         <div>{createdAtFormattedString}</div>
       </div>
     </Block>
+  );
+};
+
+interface GalleryProps {
+  gallery: string[];
+}
+
+const Gallery: React.FC<GalleryProps> = ({ gallery }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const previous = () => {
+    setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : gallery.length - 1);
+  };
+
+  const next = () => {
+    setCurrentIndex(currentIndex >= gallery.length - 1 ? 0 : currentIndex + 1);
+  };
+  return (
+    <div className="mx-auto">
+      <button className="p-2 rounded bg-blue-400" onClick={previous}>
+        Prev
+      </button>
+      <button className="ml-2 p-2 rounded bg-blue-400" onClick={next}>
+        Next
+      </button>
+
+      <img className="max-h-full" src={gallery[currentIndex]}></img>
+    </div>
   );
 };
 
