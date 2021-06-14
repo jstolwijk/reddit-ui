@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useImage } from "react-image";
 
 interface ImageGalleryProps {
   imageUrls: string[];
@@ -6,6 +7,10 @@ interface ImageGalleryProps {
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
   const [currentImage, setCurrentImage] = useState(0);
+  const { src, isLoading } = useImage({
+    srcList: imageUrls[currentImage],
+    useSuspense: false,
+  });
 
   const previous = () => {
     setCurrentImage(currentImage > 0 ? currentImage - 1 : imageUrls.length - 1);
@@ -14,9 +19,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
   const next = () => {
     setCurrentImage(currentImage >= imageUrls.length - 1 ? 0 : currentImage + 1);
   };
+
   return (
-    <div className="mx-auto max-h-1/2 relative">
-      <img className="max-h-1/2" src={imageUrls[currentImage]}></img>
+    <div className="mx-auto relative">
+      {isLoading && <div className="h-96 w-full bg-gray-200"></div>}
+      {!isLoading && <img src={src} className="object-scale-down max-h-1/2-screen w-full" />}
 
       <div className="absolute left-0 w-1/2 h-full top-0 cursor-pointer" onClick={previous}></div>
       <div className="absolute right-0 w-1/2 h-full top-0 cursor-pointer" onClick={next}></div>
@@ -31,7 +38,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
           Next
         </button>
       </div>
-      <div className="absolute p-2 m-2 bg-white rounded-md left-0 bottom-0">
+      <div className="absolute p-2 m-2 rounded-md left-0 bottom-0 bg-white">
         <p className="text-xl">
           <span className="font-mono">
             {currentImage + 1}/{imageUrls.length}
@@ -41,4 +48,17 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
       </div>
     </div>
   );
+};
+
+export const extractGalleryImagesFromMetaData = (post: any): string[] => {
+  try {
+    return (
+      (post.data.media_metadata &&
+        Object.values(post.data.media_metadata).map((item: any) => item.s.u.replace(/&amp;/g, "&"))) ||
+      []
+    );
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 };
