@@ -5,6 +5,7 @@ import { useSWRInfinite } from "swr";
 import { timeAgo } from "../../date";
 import { useLocalStorage } from "../../use-local-storage";
 import { Block, Stack } from "../Components";
+import { ImageGallery } from "../image-gallery";
 import { useQueryParam } from "../use-query-params";
 
 enum ViewType {
@@ -456,7 +457,7 @@ const Post: FC<PostProps> = ({
             <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
           </div>
         )}
-        {gallery.length > 0 && <Gallery gallery={gallery} />}
+        {gallery.length > 0 && <ImageGallery imageUrls={gallery} />}
       </div>
       <div className="p-1 flex justify-between">
         <div>
@@ -468,34 +469,6 @@ const Post: FC<PostProps> = ({
         <div>{createdAtFormattedString}</div>
       </div>
     </Block>
-  );
-};
-
-interface GalleryProps {
-  gallery: string[];
-}
-
-const Gallery: React.FC<GalleryProps> = ({ gallery }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const previous = () => {
-    setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : gallery.length - 1);
-  };
-
-  const next = () => {
-    setCurrentIndex(currentIndex >= gallery.length - 1 ? 0 : currentIndex + 1);
-  };
-  return (
-    <div className="mx-auto">
-      <button className="p-2 rounded bg-blue-400" onClick={previous}>
-        Prev
-      </button>
-      <button className="ml-2 p-2 rounded bg-blue-400" onClick={next}>
-        Next
-      </button>
-
-      <img className="max-h-full" src={gallery[currentIndex]}></img>
-    </div>
   );
 };
 
