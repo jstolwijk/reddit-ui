@@ -1,5 +1,5 @@
 import { Suspense, useState } from "react";
-import { useImage } from "react-image";
+import { Img, useImage } from "react-image";
 
 interface ImageGalleryProps {
   imageUrls: string[];
@@ -7,10 +7,6 @@ interface ImageGalleryProps {
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
   const [currentImage, setCurrentImage] = useState(0);
-  const { src, isLoading } = useImage({
-    srcList: imageUrls[currentImage],
-    useSuspense: false,
-  });
 
   const previous = () => {
     setCurrentImage(currentImage > 0 ? currentImage - 1 : imageUrls.length - 1);
@@ -22,8 +18,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
 
   return (
     <div className="mx-auto relative">
-      {isLoading && <div className="h-96 w-full bg-gray-200"></div>}
-      {!isLoading && <img src={src} className="object-scale-down max-h-1/2-screen w-full" />}
+      <Suspense fallback={<div className="h-96 w-full bg-gray-200"></div>}>
+        <Image curSrc={imageUrls[currentImage]} />
+      </Suspense>
 
       <div className="absolute left-0 w-1/2 h-full top-0 cursor-pointer" onClick={previous}></div>
       <div className="absolute right-0 w-1/2 h-full top-0 cursor-pointer" onClick={next}></div>
@@ -47,6 +44,18 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
         </p>
       </div>
     </div>
+  );
+};
+
+const Image: React.FC<any> = ({ curSrc }) => {
+  const { src, isLoading } = useImage({
+    srcList: curSrc,
+  });
+
+  return !src ? (
+    <div className="h-96 w-full bg-gray-200"></div>
+  ) : (
+    <Img src={curSrc} className="object-scale-down max-h-1/2-screen w-full" />
   );
 };
 

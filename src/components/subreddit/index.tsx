@@ -444,11 +444,7 @@ const Post: FC<PostProps> = ({
             <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
           </div>
         )}
-        {gallery.length > 0 && (
-          <Suspense fallback={<div>Image gallery died</div>}>
-            <ImageGallery imageUrls={gallery} />
-          </Suspense>
-        )}
+        {gallery.length > 0 && <ImageGallery imageUrls={gallery} />}
       </div>
       <div className="p-1 flex justify-between">
         <div>

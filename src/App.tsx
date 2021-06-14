@@ -177,11 +177,7 @@ const Comments = () => {
                     <ReactMarkdown>{postData.selftext}</ReactMarkdown>
                   </div>
                 )}
-                {images.length > 0 && (
-                  <Suspense fallback={<div>Image gallery died</div>}>
-                    <ImageGallery imageUrls={images} />
-                  </Suspense>
-                )}
+                {images.length > 0 && <ImageGallery imageUrls={images} />}
               </div>
             </div>
           </Block>
