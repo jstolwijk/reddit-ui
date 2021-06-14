@@ -1,10 +1,11 @@
-import React, { FC, useEffect, useMemo } from "react";
+import React, { FC, Suspense, useEffect, useMemo } from "react";
 import useSWR from "swr";
 import { BrowserRouter as Router, Switch, Route, useParams, Redirect, useLocation, Link } from "react-router-dom";
 import SubReddit, { fetcher } from "./components/subreddit";
 import { Block, Container, ScreenSize, Stack, useScreenSize } from "./components/Components";
 import ReactMarkdown from "react-markdown";
 import { useLocalStorage } from "./use-local-storage";
+import { extractGalleryImagesFromMetaData, ImageGallery } from "./components/image-gallery";
 
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
@@ -159,6 +160,8 @@ const Comments = () => {
   const postData = data[0].data.children[0].data;
   const comments = data[1].data.children.map((c: any) => c.data);
 
+  const images = extractGalleryImagesFromMetaData({ data: postData });
+
   return (
     <div className="col-span-10">
       <Container>
@@ -168,11 +171,16 @@ const Comments = () => {
               <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{postData.title}</h1>
               <div className="py-4">
                 {postData.post_hint === "image" && <img src={postData.url} alt="Media" />}
-                {!postData.selftext && <a href={postData.url}>{postData.url}</a>}
+                {!postData.selftext && images.length === 0 && <a href={postData.url}>{postData.url}</a>}
                 {postData.selftext && (
                   <div>
                     <ReactMarkdown>{postData.selftext}</ReactMarkdown>
                   </div>
+                )}
+                {images.length > 0 && (
+                  <Suspense fallback={<div>Image gallery died</div>}>
+                    <ImageGallery imageUrls={images} />
+                  </Suspense>
                 )}
               </div>
             </div>

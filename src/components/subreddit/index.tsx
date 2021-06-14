@@ -1,11 +1,11 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router-dom";
 import { useSWRInfinite } from "swr";
 import { timeAgo } from "../../date";
 import { useLocalStorage } from "../../use-local-storage";
 import { Block, Stack } from "../Components";
-import { ImageGallery } from "../image-gallery";
+import { extractGalleryImagesFromMetaData, ImageGallery } from "../image-gallery";
 import { useQueryParam } from "../use-query-params";
 
 enum ViewType {
@@ -129,18 +129,6 @@ export const fetcher = async (url: string) => {
   }
 };
 
-const extractGallery = (post: any): string[] => {
-  try {
-    return (
-      (post.data.media_metadata &&
-        Object.values(post.data.media_metadata).map((item: any) => item.s.u.replace(/&amp;/g, "&"))) ||
-      []
-    );
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
-};
 export default function SubReddit() {
   let { subRedditName } = useParams<any>();
   const [expandMedia, _] = useLocalStorage("expandMedia", true);
@@ -197,7 +185,6 @@ export default function SubReddit() {
       observer?.disconnect();
     };
   }, [handleObserver]);
-  console.log({ data });
 
   return (
     <div className="col-span-10">
@@ -225,7 +212,7 @@ export default function SubReddit() {
           data
             ?.flatMap((d) => d?.data?.children)
             ?.map((post: any) => {
-              const gallery = extractGallery(post);
+              const gallery = extractGalleryImagesFromMetaData(post);
 
               return (
                 <>
@@ -440,7 +427,7 @@ const Post: FC<PostProps> = ({
       : url && url.startsWith("https://www.reddit.com")
       ? url.replace("https://www.reddit.com", "")
       : url;
-  console.log({ gallery });
+
   return (
     <Block backGroundColor={stickied ? "bg-yellow-100" : undefined}>
       <div className="p-1 overflow-hidden">
@@ -457,7 +444,11 @@ const Post: FC<PostProps> = ({
             <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
           </div>
         )}
-        {gallery.length > 0 && <ImageGallery imageUrls={gallery} />}
+        {gallery.length > 0 && (
+          <Suspense fallback={<div>Image gallery died</div>}>
+            <ImageGallery imageUrls={gallery} />
+          </Suspense>
+        )}
       </div>
       <div className="p-1 flex justify-between">
         <div>
