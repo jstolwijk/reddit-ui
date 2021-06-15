@@ -1,6 +1,7 @@
 import { FC, Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router-dom";
+import LazyLoad from "react-lazyload";
 import { useSWRInfinite } from "swr";
 import { timeAgo } from "../../date";
 import { useLocalStorage } from "../../use-local-storage";
@@ -211,11 +212,11 @@ export default function SubReddit() {
         {!error &&
           data
             ?.flatMap((d) => d?.data?.children)
-            ?.map((post: any) => {
+            ?.map((post: any, index: number) => {
               const gallery = extractGalleryImagesFromMetaData(post);
 
               return (
-                <>
+                <LazyLoad height={200} offset={100}>
                   <Post
                     id={post.data.id}
                     expandMedia={expandMedia}
@@ -232,7 +233,7 @@ export default function SubReddit() {
                     domain={post.data.domain}
                     gallery={gallery}
                   />
-                </>
+                </LazyLoad>
               );
             })}
       </Stack>
@@ -436,15 +437,17 @@ const Post: FC<PostProps> = ({
         </TitleLink>
         {/* Add lazy loading to iframe: loading="lazy" https://web.dev/iframe-lazy-loading/ */}
 
-        {expandMedia && mediaEmbed.content && (
-          <div className="mx-auto" dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
-        )}
-        {expandMedia && type === "image" && (
-          <div className="p-2">
-            <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
-          </div>
-        )}
-        {gallery.length > 0 && <ImageGallery imageUrls={gallery} />}
+        <>
+          {expandMedia && mediaEmbed.content && (
+            <div className="mx-auto" dangerouslySetInnerHTML={{ __html: htmlDecode(mediaEmbed.content) ?? "" }} />
+          )}
+          {expandMedia && type === "image" && (
+            <div className="p-2">
+              <img className="object-scale-down max-h-96 w-full" src={url} alt="Media" />
+            </div>
+          )}
+          {gallery.length > 0 && <ImageGallery imageUrls={gallery} />}
+        </>
       </div>
       <div className="p-1 flex justify-between">
         <div>

@@ -18,7 +18,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ imageUrls }) => {
 
   return (
     <div className="mx-auto relative">
-      <Suspense fallback={<div className="h-96 w-full bg-gray-200"></div>}>
+      <Suspense fallback={<div className="h-96 w-full bg-white"></div>}>
         <Image curSrc={imageUrls[currentImage]} />
       </Suspense>
 
@@ -52,10 +52,10 @@ const Image: React.FC<any> = ({ curSrc }) => {
     srcList: curSrc,
   });
 
-  return !src ? (
-    <div className="h-96 w-full bg-gray-200"></div>
+  return isLoading ? (
+    <div className="h-96 w-full bg-white"></div>
   ) : (
-    <Img src={curSrc} className="object-scale-down max-h-1/2-screen w-full" />
+    <img src={src} className="object-scale-down max-h-1/2-screen w-full" />
   );
 };
 
