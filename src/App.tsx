@@ -6,10 +6,18 @@ import { Block, Container, ScreenSize, Stack, useScreenSize } from "./components
 import ReactMarkdown from "react-markdown";
 import { useLocalStorage } from "./use-local-storage";
 import { extractGalleryImagesFromMetaData, ImageGallery } from "./components/image-gallery";
+import { v4 as uuidv4 } from "uuid";
 
 const increment = (number: number | undefined) => (number ?? 0) + 1;
 
 const App = () => {
+  const [u, _] = useLocalStorage("u", uuidv4());
+  useEffect(() => {
+    try {
+      fetch(`/.netlify/functions/reporting?u=${u}`);
+    } catch (e) {}
+  });
+
   return (
     <Router>
       <Container>

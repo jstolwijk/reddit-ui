@@ -25,12 +25,21 @@ const notifyLSBus = (key: string, newValue: any) => {
  * @returns {Array} [value, setFunction]
  */
 export const useLocalStorage = (key: string, initialValue: any = null) => {
-  let defaultValue;
-  try {
-    defaultValue = localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)!) : initialValue;
-  } catch (e) {
-    defaultValue = initialValue;
+  let defaultValue = initialValue;
+  const [localStoragePopulated, setLocalStoragePopulated] = React.useState(localStorage.getItem(key) !== null);
+
+  if (localStoragePopulated) {
+    try {
+      defaultValue = JSON.parse(localStorage.getItem(key)!);
+    } catch (e) {
+      console.error(e);
+      defaultValue = initialValue;
+    }
+  } else {
+    localStorage.setItem(key, JSON.stringify(defaultValue));
+    setLocalStoragePopulated(true);
   }
+
   const [value, setValue] = React.useState(defaultValue);
   const componentId = React.useState(Math.random().toString())[0];
 
